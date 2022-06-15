@@ -10,21 +10,35 @@ import (
 	util "github.com/alibabacloud-go/tea-utils/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 
-	"github.com/xuri/excelize/v2"
+	"github.com/DesistDaydream/aliyun-openapi/pkg/file"
 )
 
-var runtime = &util.RuntimeOptions{}
+type DomainHandler struct {
+	DomainName string
+	Runtime    *util.RuntimeOptions
+}
+
+// 实例化域名处理器
+func NewDomainHandler(flags *Flags) *DomainHandler {
+	return &DomainHandler{
+		DomainName: flags.DomainName,
+		Runtime:    &util.RuntimeOptions{},
+	}
+}
+
+// var runtime = &util.RuntimeOptions{}
 
 // 获取解析记录列表
-func DomainRecordsList(client *alidns20150109.Client) {
+func (d *DomainHandler) DomainRecordsList(client *alidns20150109.Client) {
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
 	describeDomainRecordsRequest := &alidns20150109.DescribeDomainRecordsRequest{
-		DomainName: tea.String("desistdaydream.ltd"),
+		DomainName: tea.String(d.DomainName),
 	}
 
 	// 使用参数调用 DescribeDomainRecords 接口
-	dd, err := client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, runtime)
+	dd, err := client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.Runtime)
 	if err != nil {
 		panic(err)
 	}
@@ -32,21 +46,23 @@ func DomainRecordsList(client *alidns20150109.Client) {
 }
 
 // 逐一添加解析记录
-func BatchAddDomainRecord(client *alidns20150109.Client, excelFile string) {
+func (d *DomainHandler) BatchAddDomainRecord(client *alidns20150109.Client, excelFile string) {
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := HandleExcel(excelFile)
+	excelInfos := file.HandleExcel(excelFile, d.DomainName)
+
+	file.HandleExcel(excelFile, d.DomainName)
 
 	for _, info := range excelInfos {
 		logrus.Infoln(info.Type, info.Value, info.Host)
 
 		// 发起 AddDomainRecord 请求时需要携带的参数
 		addDomainRecordRequest := &alidns20150109.AddDomainRecordRequest{
-			DomainName: tea.String("desistdaydream.ltd"),
+			DomainName: tea.String(d.DomainName),
 			Type:       tea.String(info.Type),
 			Value:      tea.String(info.Value),
 			RR:         tea.String(info.Host),
 		}
-		dd, err := client.AddDomainRecordWithOptions(addDomainRecordRequest, runtime)
+		dd, err := client.AddDomainRecordWithOptions(addDomainRecordRequest, d.Runtime)
 		if err != nil {
 			logrus.Error(err)
 		}
@@ -57,10 +73,9 @@ func BatchAddDomainRecord(client *alidns20150109.Client, excelFile string) {
 }
 
 // 批量删除全部解析记录
-func BatchDeleteAll(client *alidns20150109.Client) {
-
+func (d *DomainHandler) BatchDeleteAll(client *alidns20150109.Client) {
 	domainRecordInfo0 := &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
-		Domain: tea.String("desistdaydream.ltd"),
+		Domain: tea.String(d.DomainName),
 	}
 	operateBatchDomainRequest := &alidns20150109.OperateBatchDomainRequest{
 		DomainRecordInfo: []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo{domainRecordInfo0},
@@ -81,13 +96,13 @@ func BatchDeleteAll(client *alidns20150109.Client) {
 // DOMAIN_DEL：批量删除域名
 // RR_ADD：批量添加解析
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
-func Batch(client *alidns20150109.Client, operateType string, excelFile string) {
+func (d *DomainHandler) Batch(client *alidns20150109.Client, operateType string, excelFile string) {
 
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 	var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := HandleExcel(excelFile)
+	excelInfos := file.HandleExcel(excelFile, d.DomainName)
 
 	for _, info := range excelInfos {
 		logrus.Infoln(info.Type, info.Value, info.Host)
@@ -95,7 +110,7 @@ func Batch(client *alidns20150109.Client, operateType string, excelFile string) 
 		domainRecordInfo.Type = tea.String(info.Type)
 		domainRecordInfo.Value = tea.String(info.Value)
 		domainRecordInfo.Rr = tea.String(info.Host)
-		domainRecordInfo.Domain = tea.String("desistdaydream.ltd")
+		domainRecordInfo.Domain = tea.String(d.DomainName)
 
 		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
 	}
@@ -109,7 +124,7 @@ func Batch(client *alidns20150109.Client, operateType string, excelFile string) 
 
 	logrus.Info(operateBatchDomainRequest)
 
-	result, err := client.OperateBatchDomainWithOptions(operateBatchDomainRequest, runtime)
+	result, err := client.OperateBatchDomainWithOptions(operateBatchDomainRequest, d.Runtime)
 	if err != nil {
 		panic(err)
 	}
@@ -157,70 +172,27 @@ func NewAuthInfo() (auth *AuthInfo) {
 	return auth
 }
 
-// Excel 列表
-type ExcelInfo struct {
-	Type       string `json:"type"`
-	Host       string `json:"host"`
-	ISPLine    string `json:"isp"`
-	Value      string `json:"value"`
-	MXPriority string `json:"mxPriority"`
-	TTL        string `json:"ttl"`
-	Status     string `json:"status"`
-	Remark     string `json:"remark"`
+// 命令行标志
+type Flags struct {
+	DomainName string
+	File       string
 }
 
-func NewExcelInfo() *ExcelInfo {
-	return &ExcelInfo{}
-}
-
-// type ExcelInfos struct {
-// 	Infos []ExcelInfo `json:"infos"`
-// }
-
-// 处理 Excel 文件
-func HandleExcel(fileName string) (excelInfos []*ExcelInfo) {
-	f, err := excelize.OpenFile(fileName)
-	if err != nil {
-		logrus.Errorln(err)
-		return
-	}
-	defer func() {
-		// Close the spreadsheet.
-		if err := f.Close(); err != nil {
-			logrus.Errorln(err)
-		}
-	}()
-
-	// 从第二行开始逐行读取Excel文件
-	rows, _ := f.GetRows("desistdaydream.ltd")
-
-	for k, row := range rows {
-		if k == 0 {
-			continue
-		}
-		excelInfo := new(ExcelInfo)
-		// 读取每一行的数据
-		excelInfo.Type = row[0]
-		excelInfo.Host = row[1]
-		excelInfo.ISPLine = row[2]
-		excelInfo.Value = row[3]
-		excelInfo.MXPriority = row[4]
-		excelInfo.TTL = row[5]
-		excelInfo.Status = row[6]
-		// 尝试获取7号元素，若无法获取则设置为空
-		if len(row) > 7 {
-			excelInfo.Remark = row[7]
-		} else {
-			excelInfo.Remark = ""
-		}
-
-		excelInfos = append(excelInfos, excelInfo)
-	}
-
-	return excelInfos
+// 设置命令行标志
+func (flags *Flags) AddFlags() {
+	pflag.StringVarP(&flags.DomainName, "domain", "d", "", "域名")
+	pflag.StringVarP(&flags.File, "file", "f", "desistdaydream.ltd.xlsx", "Excel文件")
 }
 
 func main() {
+	operation := pflag.StringP("operation", "o", "", "操作类型")
+	// 添加命令行标志
+	f := &Flags{}
+	f.AddFlags()
+	pflag.Parse()
+
+	h := NewDomainHandler(f)
+
 	auth := NewAuthInfo()
 	logrus.Info(auth)
 
@@ -231,10 +203,19 @@ func main() {
 	}
 	logrus.Debugln(client)
 
-	// DomainRecords(client)
 	// Batch(client, "RR_DEL", "desistdaydream.ltd.xlsx")
 
-	// BatchDeleteAll(client)
-	// TODO: 根据任务 ID 判断任务是否完成;删除任务完成后再执行添加任务
-	BatchAddDomainRecord(client, "desistdaydream.ltd.xlsx")
+	switch *operation {
+	case "list":
+		h.DomainRecordsList(client)
+	case "add":
+		// h.BatchDeleteAll(client)
+		// TODO: 根据任务 ID 判断删除任务是否完成;删除任务完成后再执行添加任务
+		h.BatchAddDomainRecord(client, f.File)
+	case "del-all":
+		h.BatchDeleteAll(client)
+	default:
+		panic("操作类型不存在")
+	}
+
 }
