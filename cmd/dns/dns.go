@@ -2,7 +2,6 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 
 	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
@@ -12,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
+	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/filehandler"
 )
 
@@ -153,26 +153,6 @@ func CreateClient(accessKeyId string, accessKeySecret string) (_result *alidns20
 	return _result, _err
 }
 
-// 认证信息
-type AuthInfo struct {
-	AccessKeyId     string `json:"accessKeyId"`
-	AccessKeySecret string `json:"accessKeySecret"`
-}
-
-func NewAuthInfo() (auth *AuthInfo) {
-	// 读取认证信息
-	fileByte, err := os.ReadFile("auth.json")
-	if err != nil {
-		panic(err)
-	}
-
-	err = json.Unmarshal(fileByte, &auth)
-	if err != nil {
-		panic(err)
-	}
-	return auth
-}
-
 // LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
 func LogInit(level, file, format string) error {
 	switch format {
@@ -213,16 +193,15 @@ func LogInit(level, file, format string) error {
 // 命令行标志
 type Flags struct {
 	DomainName string
-	Dir        string
-	File       string
+	AuthFile   string
+	RRFile     string
 }
 
 // 设置命令行标志
 func (flags *Flags) AddFlags() {
 	pflag.StringVarP(&flags.DomainName, "domain", "d", "", "域名")
-	// 文件路径
-	pflag.StringVarP(&flags.Dir, "dir", "i", "/mnt/d/Documents/WPS Cloud Files/1054253139/团队文档/设备文档与服务信息/域名解析/", "文件路径")
-	pflag.StringVarP(&flags.File, "file", "f", "desistdaydream.ltd.xlsx", "Excel文件")
+	pflag.StringVarP(&flags.AuthFile, "auth-file", "F", "auth.yaml", "认证信息文件")
+	pflag.StringVarP(&flags.RRFile, "rr-file", "f", "", "存有域名资源记录的文件")
 }
 
 func main() {
@@ -242,11 +221,11 @@ func main() {
 	}
 
 	// 获取认证信息
-	auth := NewAuthInfo()
+	auth := config.NewAuthInfo(f.AuthFile)
 	logrus.Info(auth)
 
 	// 初始化账号Client
-	client, err := CreateClient(auth.AccessKeyId, auth.AccessKeySecret)
+	client, err := CreateClient(auth.AuthList[f.DomainName].AccessKeyID, auth.AuthList[f.DomainName].AccessKeySecret)
 	if err != nil {
 		panic(err)
 	}
@@ -259,11 +238,11 @@ func main() {
 	case "add":
 		// h.BatchDeleteAll(client)
 		// TODO: 根据任务 ID 判断删除任务是否完成;删除任务完成后再执行添加任务
-		h.OnebyoneAddDomainRecord(f.File)
+		h.OnebyoneAddDomainRecord(f.RRFile)
 	case "del-all":
 		h.BatchDeleteAll()
 	case "batch":
-		h.Batch("RR_DEL", "desistdaydream.ltd.xlsx")
+		h.Batch("RR_DEL", f.RRFile)
 	default:
 		panic("操作类型不存在")
 	}

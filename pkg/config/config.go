@@ -1,13 +1,12 @@
-package main
+package config
 
 import (
-	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
-// 认证信息
+// 认证信息配置
 type AuthConfig struct {
 	AuthList map[string]Auth `json:"authList" yaml:"authList"`
 }
@@ -16,10 +15,9 @@ type Auth struct {
 	AccessKeySecret string `json:"accessKeySecret" yaml:"accessKeySecret"`
 }
 
-func main() {
-	var auth *AuthConfig
-
-	fileByte, err := os.ReadFile("auth.yaml")
+func NewAuthInfo(file string) (auth *AuthConfig) {
+	// 读取认证信息
+	fileByte, err := os.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
@@ -28,5 +26,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(auth.AuthList["desistdaydream.ltd"])
+	return auth
 }

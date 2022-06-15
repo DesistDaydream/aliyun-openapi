@@ -40,7 +40,7 @@ func NewExcelData(file string, domainName string) *ExcelData {
 	// 逐行读取Excel文件
 	rows, err := f.GetRows(domainName)
 	if err != nil {
-		logrus.Errorf("读取 %v sheet 页错误")
+		logrus.Errorf("读取 %v 文件中 sheet 页每行的信息时发生错误: %v", file, err)
 		return nil
 	}
 
