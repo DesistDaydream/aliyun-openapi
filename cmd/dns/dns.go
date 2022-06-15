@@ -73,25 +73,6 @@ func (d *DomainHandler) OnebyoneAddDomainRecord(file string) {
 	}
 }
 
-// 批量删除全部解析记录
-func (d *DomainHandler) BatchDeleteAll() {
-	domainRecordInfo0 := &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
-		Domain: tea.String(d.DomainName),
-	}
-	operateBatchDomainRequest := &alidns20150109.OperateBatchDomainRequest{
-		DomainRecordInfo: []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo{domainRecordInfo0},
-		Type:             tea.String("RR_DEL"),
-	}
-	runtime := &util.RuntimeOptions{}
-
-	result, err := d.client.OperateBatchDomainWithOptions(operateBatchDomainRequest, runtime)
-	if err != nil {
-		panic(err)
-	}
-	logrus.Info(result)
-}
-
-// TODO: 那些变量都啥玩意0.0~~~o(╯□╰)o
 // 批量操作
 // operateType 可用值如下：
 // DOMAIN_ADD：批量添加域名
@@ -100,30 +81,26 @@ func (d *DomainHandler) BatchDeleteAll() {
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
 func (d *DomainHandler) Batch(operateType string, file string) {
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
-	var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := filehandler.NewExcelData(file, d.DomainName)
+	data := filehandler.NewExcelData(file, d.DomainName)
 
-	for _, info := range excelInfos.Rows {
-		logrus.Infoln(info.Type, info.Value, info.Host)
-
-		domainRecordInfo.Type = tea.String(info.Type)
-		domainRecordInfo.Value = tea.String(info.Value)
-		domainRecordInfo.Rr = tea.String(info.Host)
+	for _, row := range data.Rows {
+		var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
+		domainRecordInfo.Type = tea.String(row.Type)
+		domainRecordInfo.Value = tea.String(row.Value)
+		domainRecordInfo.Rr = tea.String(row.Host)
 		domainRecordInfo.Domain = tea.String(d.DomainName)
 
 		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
 	}
 
-	logrus.Info(domainRecordInfos)
+	logrus.Debugln(domainRecordInfos)
 
 	operateBatchDomainRequest := &alidns20150109.OperateBatchDomainRequest{
 		Type:             tea.String(operateType),
 		DomainRecordInfo: domainRecordInfos,
 	}
-
-	logrus.Info(operateBatchDomainRequest)
 
 	result, err := d.client.OperateBatchDomainWithOptions(operateBatchDomainRequest, d.Runtime)
 	if err != nil {
@@ -206,6 +183,7 @@ func (flags *Flags) AddFlags() {
 
 func main() {
 	operation := pflag.StringP("operation", "o", "", "操作类型: [add, del-all, list, batch]")
+	batchOperation := pflag.StringP("batch-operation", "O", "", "操作类型: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]")
 	logLevel := pflag.String("log-level", "info", "日志级别:[debug, info, warn, error, fatal]")
 	logFile := pflag.String("log-output", "", "日志输出位置，不填默认标准输出 stdout")
 	logFormat := pflag.String("log-format", "text", "日志输出格式: [text, json]")
@@ -222,7 +200,11 @@ func main() {
 
 	// 获取认证信息
 	auth := config.NewAuthInfo(f.AuthFile)
-	logrus.Info(auth)
+
+	// 判断传入的域名是否存在在认证信息中
+	if !auth.IsDomainExist(f.DomainName) {
+		logrus.Fatalf("认证信息中不存在 %v 域名, 请检查认证信息文件或命令行参数的值", f.DomainName)
+	}
 
 	// 初始化账号Client
 	client, err := CreateClient(auth.AuthList[f.DomainName].AccessKeyID, auth.AuthList[f.DomainName].AccessKeySecret)
@@ -232,6 +214,10 @@ func main() {
 
 	h := NewDomainHandler(f, client)
 
+	if f.DomainName == "" {
+		logrus.Fatal("请使用 -d 标志指定要操作的域名")
+	}
+
 	switch *operation {
 	case "list":
 		h.DomainRecordsList()
@@ -240,11 +226,10 @@ func main() {
 		// TODO: 根据任务 ID 判断删除任务是否完成;删除任务完成后再执行添加任务
 		h.OnebyoneAddDomainRecord(f.RRFile)
 	case "del-all":
-		h.BatchDeleteAll()
-	case "batch":
 		h.Batch("RR_DEL", f.RRFile)
+	case "batch":
+		h.Batch(*batchOperation, f.RRFile)
 	default:
 		panic("操作类型不存在")
 	}
-
 }

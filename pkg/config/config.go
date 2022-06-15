@@ -28,3 +28,12 @@ func NewAuthInfo(file string) (auth *AuthConfig) {
 	}
 	return auth
 }
+
+// 判断文件中是否存在域名
+func (c *AuthConfig) IsDomainExist(domName string) bool {
+	if _, ok := c.AuthList[domName]; ok {
+		return true
+	} else {
+		return false
+	}
+}
