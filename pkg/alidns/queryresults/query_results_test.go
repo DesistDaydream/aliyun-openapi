@@ -1,4 +1,4 @@
-package domain
+package queryresults
 
 import (
 	"testing"
@@ -7,10 +7,9 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
 	"github.com/alibabacloud-go/tea-utils/service"
-	"github.com/sirupsen/logrus"
 )
 
-func TestAlidnsDomain_Batch(t *testing.T) {
+func TestAlidnsQueryResults_QueryResults(t *testing.T) {
 	// 准备测试数据
 	domainName := "desistdaydream.ltd"
 	auth := config.NewAuthInfo("../../../auth.yaml")
@@ -24,19 +23,18 @@ func TestAlidnsDomain_Batch(t *testing.T) {
 		AlidnsHandler *alidns.AlidnsHandler
 	}
 	type args struct {
-		operateType string
-		file        string
+		taskID int64
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    int64
+		want    int32
 		wantErr bool
 	}{
 		// TODO: Add test cases.
 		{
-			name: "测试批量操作",
+			name: domainName,
 			fields: fields{
 				AlidnsHandler: &alidns.AlidnsHandler{
 					DomainName: domainName,
@@ -45,28 +43,25 @@ func TestAlidnsDomain_Batch(t *testing.T) {
 				},
 			},
 			args: args{
-				operateType: "RR_ADD",
-				file:        "../../../desistdaydream.ltd.xlsx",
+				taskID: 3715007136,
 			},
-			// 这里不用 want 为 0，因为结果肯定是不为 0
-			// want:    0,
+			want:    1,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &AlidnsDomain{
+			qr := &AlidnsQueryResults{
 				AlidnsHandler: tt.fields.AlidnsHandler,
 			}
-			got, err := d.Batch(tt.args.operateType, tt.args.file)
+			got, err := qr.QueryResults(tt.args.taskID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("AlidnsDomain.Batch() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("AlidnsQueryResults.QueryResults() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got == 0 {
-				t.Errorf("AlidnsDomain.Batch() = %v, want %v", got, tt.want)
+			if got != tt.want {
+				t.Errorf("AlidnsQueryResults.QueryResults() = %v, want %v", got, tt.want)
 			}
-			logrus.Infof("测试成功,执行了 %v 行为，获取到的任务ID 为: %v", tt.args.operateType, got)
 		})
 	}
 }

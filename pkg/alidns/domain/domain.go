@@ -25,11 +25,15 @@ func NewAlidnsDomain(alidnsHandler *alidns.AlidnsHandler) *AlidnsDomain {
 // DOMAIN_DEL：批量删除域名
 // RR_ADD：批量添加解析
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
-func (d *AlidnsDomain) Batch(operateType string, file string) {
+func (d *AlidnsDomain) Batch(operateType string, file string) (int64, error) {
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	data := fileparse.NewExcelData(file, d.AlidnsHandler.DomainName)
+	data, err := fileparse.NewExcelData(file, d.AlidnsHandler.DomainName)
+	if err != nil {
+		logrus.Errorf("fileparse.NewExcelData error: %v", err)
+		return 0, err
+	}
 
 	for _, row := range data.Rows {
 		var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
@@ -50,9 +54,16 @@ func (d *AlidnsDomain) Batch(operateType string, file string) {
 
 	result, err := d.AlidnsHandler.Client.OperateBatchDomainWithOptions(operateBatchDomainRequest, d.AlidnsHandler.Runtime)
 	if err != nil {
-		panic(err)
+		logrus.Fatalln(err)
+		return 0, err
 	}
-	logrus.Info(result)
+
+	logrus.WithFields(logrus.Fields{
+		"任务ID": *result.Body.TaskId,
+		"请求ID": *result.Body.RequestId,
+	}).Info("批量任务运行信息")
+
+	return *result.Body.TaskId, nil
 }
 
 // 判断批量操作类型是否合法

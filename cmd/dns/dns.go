@@ -3,6 +3,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -10,6 +11,7 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/aliclient"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/domain"
+	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/queryresults"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/resolve"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
 )
@@ -90,6 +92,7 @@ func main() {
 	h := alidns.NewAlidnsHandler(alidnsFlags, client)
 	d := domain.NewAlidnsDomain(h)
 	r := resolve.NewAlidnsResolve(h)
+	q := queryresults.NewQueryResults(h)
 
 	switch *operation {
 	case "list":
@@ -99,8 +102,25 @@ func main() {
 		if _, err := os.Stat(alidnsFlags.RRFile); os.IsNotExist(err) {
 			logrus.Fatal("文件不存在")
 		}
-		// h.BatchDeleteAll(client)
-		// TODO: 根据任务 ID 判断删除任务是否完成;删除任务完成后再执行添加任务
+
+		// 添加解析记录前先删除全部解析记录
+		taskID, err := d.Batch("RR_DEL", alidnsFlags.RRFile)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
+		for {
+			task, err := q.QueryResults(taskID)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			if task == 1 {
+				break
+			}
+			time.Sleep(time.Second * 1)
+		}
+		// 这里为了测试目的，使用的是逐一添加的方式，实际应用中可以使用批量添加的方式
 		r.OnebyoneAddDomainRecord(alidnsFlags.RRFile)
 	case "batch":
 		// 检查文件是否存在

@@ -37,7 +37,10 @@ func (d *AlidnsResolve) DomainRecordsList() {
 // 逐一添加解析记录 AddDomainRecord
 func (d *AlidnsResolve) OnebyoneAddDomainRecord(file string) {
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	data := fileparse.NewExcelData(file, d.AlidnsHandler.DomainName)
+	data, err := fileparse.NewExcelData(file, d.AlidnsHandler.DomainName)
+	if err != nil {
+		logrus.Errorln(err)
+	}
 
 	for _, row := range data.Rows {
 		// 发起 AddDomainRecord 请求时需要携带的参数

@@ -22,12 +22,12 @@ type ExcelData struct {
 	Rows []ExcelRowData `json:"data"`
 }
 
-func NewExcelData(file string, domainName string) *ExcelData {
+func NewExcelData(file string, domainName string) (*ExcelData, error) {
 	var ed ExcelData
 	f, err := excelize.OpenFile(file)
 	if err != nil {
 		logrus.Errorln(err)
-		return nil
+		return nil, err
 	}
 	defer func() {
 		// Close the spreadsheet.
@@ -44,7 +44,7 @@ func NewExcelData(file string, domainName string) *ExcelData {
 			"file":  file,
 			"sheet": domainName,
 		}).Errorf("读取中sheet页异常: %v", err)
-		return nil
+		return nil, err
 	}
 
 	for k, row := range rows {
@@ -78,5 +78,5 @@ func NewExcelData(file string, domainName string) *ExcelData {
 
 	return &ExcelData{
 		Rows: ed.Rows,
-	}
+	}, nil
 }
