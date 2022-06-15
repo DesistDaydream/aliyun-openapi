@@ -28,8 +28,6 @@ func NewDomainHandler(flags *Flags) *DomainHandler {
 	}
 }
 
-// var runtime = &util.RuntimeOptions{}
-
 // 获取解析记录列表
 func (d *DomainHandler) DomainRecordsList(client *alidns20150109.Client) {
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
