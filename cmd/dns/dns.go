@@ -18,25 +18,27 @@ import (
 type DomainHandler struct {
 	DomainName string
 	Runtime    *util.RuntimeOptions
+	client     *alidns20150109.Client
 }
 
 // 实例化域名处理器
-func NewDomainHandler(flags *Flags) *DomainHandler {
+func NewDomainHandler(flags *Flags, client *alidns20150109.Client) *DomainHandler {
 	return &DomainHandler{
 		DomainName: flags.DomainName,
 		Runtime:    &util.RuntimeOptions{},
+		client:     client,
 	}
 }
 
 // 获取解析记录列表
-func (d *DomainHandler) DomainRecordsList(client *alidns20150109.Client) {
+func (d *DomainHandler) DomainRecordsList() {
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
 	describeDomainRecordsRequest := &alidns20150109.DescribeDomainRecordsRequest{
 		DomainName: tea.String(d.DomainName),
 	}
 
 	// 使用参数调用 DescribeDomainRecords 接口
-	dd, err := client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.Runtime)
+	dd, err := d.client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.Runtime)
 	if err != nil {
 		panic(err)
 	}
@@ -44,33 +46,35 @@ func (d *DomainHandler) DomainRecordsList(client *alidns20150109.Client) {
 }
 
 // 逐一添加解析记录
-func (d *DomainHandler) BatchAddDomainRecord(client *alidns20150109.Client, excelFile string) {
-	logrus.Info(excelFile)
+func (d *DomainHandler) OnebyoneAddDomainRecord(file string) {
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := filehandler.HandleExcel(excelFile, d.DomainName)
+	data := filehandler.NewExcelData(file, d.DomainName)
 
-	for _, info := range excelInfos {
-		logrus.Infoln(info.Type, info.Value, info.Host)
-
+	for _, row := range data.Rows {
 		// 发起 AddDomainRecord 请求时需要携带的参数
 		addDomainRecordRequest := &alidns20150109.AddDomainRecordRequest{
 			DomainName: tea.String(d.DomainName),
-			Type:       tea.String(info.Type),
-			Value:      tea.String(info.Value),
-			RR:         tea.String(info.Host),
+			Type:       tea.String(row.Type),
+			Value:      tea.String(row.Value),
+			RR:         tea.String(row.Host),
 		}
-		dd, err := client.AddDomainRecordWithOptions(addDomainRecordRequest, d.Runtime)
+		dd, err := d.client.AddDomainRecordWithOptions(addDomainRecordRequest, d.Runtime)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Errorf("添加记录失败\n%v", err)
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"记录类型": row.Type,
+				"记录值":  row.Value,
+				"主机记录": row.Host,
+			}).Infof("记录添加成功")
+
+			logrus.Debugf("检查添加成功的响应结果: %v", dd)
 		}
-
-		logrus.Infoln(dd)
 	}
-
 }
 
 // 批量删除全部解析记录
-func (d *DomainHandler) BatchDeleteAll(client *alidns20150109.Client) {
+func (d *DomainHandler) BatchDeleteAll() {
 	domainRecordInfo0 := &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
 		Domain: tea.String(d.DomainName),
 	}
@@ -80,28 +84,28 @@ func (d *DomainHandler) BatchDeleteAll(client *alidns20150109.Client) {
 	}
 	runtime := &util.RuntimeOptions{}
 
-	result, err := client.OperateBatchDomainWithOptions(operateBatchDomainRequest, runtime)
+	result, err := d.client.OperateBatchDomainWithOptions(operateBatchDomainRequest, runtime)
 	if err != nil {
 		panic(err)
 	}
 	logrus.Info(result)
 }
 
+// TODO: 那些变量都啥玩意0.0~~~o(╯□╰)o
 // 批量操作
 // operateType 可用值如下：
 // DOMAIN_ADD：批量添加域名
 // DOMAIN_DEL：批量删除域名
 // RR_ADD：批量添加解析
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
-func (d *DomainHandler) Batch(client *alidns20150109.Client, operateType string, file string) {
-
+func (d *DomainHandler) Batch(operateType string, file string) {
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 	var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := filehandler.HandleExcel(file, d.DomainName)
+	excelInfos := filehandler.NewExcelData(file, d.DomainName)
 
-	for _, info := range excelInfos {
+	for _, info := range excelInfos.Rows {
 		logrus.Infoln(info.Type, info.Value, info.Host)
 
 		domainRecordInfo.Type = tea.String(info.Type)
@@ -121,7 +125,7 @@ func (d *DomainHandler) Batch(client *alidns20150109.Client, operateType string,
 
 	logrus.Info(operateBatchDomainRequest)
 
-	result, err := client.OperateBatchDomainWithOptions(operateBatchDomainRequest, d.Runtime)
+	result, err := d.client.OperateBatchDomainWithOptions(operateBatchDomainRequest, d.Runtime)
 	if err != nil {
 		panic(err)
 	}
@@ -169,6 +173,43 @@ func NewAuthInfo() (auth *AuthInfo) {
 	return auth
 }
 
+// LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
+func LogInit(level, file, format string) error {
+	switch format {
+	case "text":
+		logrus.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp:   true,
+			TimestampFormat: "2006-01-02 15:04:05",
+		})
+	case "json":
+		logrus.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat:   "2006-01-02 15:04:05",
+			DisableTimestamp:  false,
+			DisableHTMLEscape: false,
+			DataKey:           "",
+			// FieldMap:          map[logrus.fieldKey]string{},
+			// CallerPrettyfier: func(*runtime.Frame) (string, string) {},
+			PrettyPrint: false,
+		})
+	}
+
+	logLevel, err := logrus.ParseLevel(level)
+	if err != nil {
+		return err
+	}
+	logrus.SetLevel(logLevel)
+
+	if file != "" {
+		f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			return err
+		}
+		logrus.SetOutput(f)
+	}
+
+	return nil
+}
+
 // 命令行标志
 type Flags struct {
 	DomainName string
@@ -185,14 +226,22 @@ func (flags *Flags) AddFlags() {
 }
 
 func main() {
-	operation := pflag.StringP("operation", "o", "", "操作类型")
+	operation := pflag.StringP("operation", "o", "", "操作类型: [add, del-all, list, batch]")
+	logLevel := pflag.String("log-level", "info", "日志级别:[debug, info, warn, error, fatal]")
+	logFile := pflag.String("log-output", "", "日志输出位置，不填默认标准输出 stdout")
+	logFormat := pflag.String("log-format", "text", "日志输出格式: [text, json]")
+
 	// 添加命令行标志
 	f := &Flags{}
 	f.AddFlags()
 	pflag.Parse()
 
-	h := NewDomainHandler(f)
+	// 初始化日志
+	if err := LogInit(*logLevel, *logFile, *logFormat); err != nil {
+		logrus.Fatal("set log level error")
+	}
 
+	// 获取认证信息
 	auth := NewAuthInfo()
 	logrus.Info(auth)
 
@@ -201,19 +250,20 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	logrus.Debugln(client)
 
-	// Batch(client, "RR_DEL", "desistdaydream.ltd.xlsx")
+	h := NewDomainHandler(f, client)
 
 	switch *operation {
 	case "list":
-		h.DomainRecordsList(client)
+		h.DomainRecordsList()
 	case "add":
 		// h.BatchDeleteAll(client)
 		// TODO: 根据任务 ID 判断删除任务是否完成;删除任务完成后再执行添加任务
-		h.BatchAddDomainRecord(client, f.File)
+		h.OnebyoneAddDomainRecord(f.File)
 	case "del-all":
-		h.BatchDeleteAll(client)
+		h.BatchDeleteAll()
+	case "batch":
+		h.Batch("RR_DEL", "desistdaydream.ltd.xlsx")
 	default:
 		panic("操作类型不存在")
 	}

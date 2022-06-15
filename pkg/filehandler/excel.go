@@ -5,7 +5,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// Excel 文件中的信息
+// Excel 中每行的数据
 type ExcelRowData struct {
 	Type       string `json:"type"`
 	Host       string `json:"host"`
@@ -17,96 +17,63 @@ type ExcelRowData struct {
 	Remark     string `json:"remark"`
 }
 
+// Excel 中的数据
 type ExcelData struct {
-	Data []ExcelRowData `json:"data"`
+	Rows []ExcelRowData `json:"data"`
 }
 
-func NewExcelInfo(file string, domainName string) (ed *ExcelData) {
+func NewExcelData(file string, domainName string) *ExcelData {
+	var ed ExcelData
 	f, err := excelize.OpenFile(file)
 	if err != nil {
 		logrus.Errorln(err)
-		return
+		return nil
 	}
 	defer func() {
 		// Close the spreadsheet.
 		if err := f.Close(); err != nil {
 			logrus.Errorln(err)
+			return
 		}
 	}()
 
-	// 从第二行开始逐行读取Excel文件
-	rows, _ := f.GetRows(domainName)
+	// 逐行读取Excel文件
+	rows, err := f.GetRows(domainName)
+	if err != nil {
+		logrus.Errorf("读取 %v sheet 页错误")
+		return nil
+	}
 
 	for k, row := range rows {
+		// 跳过第一行
 		if k == 0 {
 			continue
 		}
-		excelInfo := new(ExcelRowData)
-		// 读取每一行的数据
-		excelInfo.Type = row[0]
-		excelInfo.Host = row[1]
-		excelInfo.ISPLine = row[2]
-		excelInfo.Value = row[3]
-		excelInfo.MXPriority = row[4]
-		excelInfo.TTL = row[5]
-		excelInfo.Status = row[6]
-		// 尝试获取7号元素，若无法获取则设置为空
+		logrus.WithFields(logrus.Fields{
+			"k":   k,
+			"row": row,
+		}).Debugf("检查每一条需要处理的解析记录")
+
+		// 将每一行中的的每列数据赋值到结构体重
+		var erd ExcelRowData
+		erd.Type = row[0]
+		erd.Host = row[1]
+		erd.ISPLine = row[2]
+		erd.Value = row[3]
+		erd.MXPriority = row[4]
+		erd.TTL = row[5]
+		erd.Status = row[6]
+		// 尝试第七列的值，若无法获取则设置为空
 		if len(row) > 7 {
-			excelInfo.Remark = row[7]
+			erd.Remark = row[7]
 		} else {
-			excelInfo.Remark = ""
+			erd.Remark = ""
 		}
 
-		ed.Data = append(ed.Data, *excelInfo)
+		ed.Rows = append(ed.Rows, erd)
 	}
 
 	return &ExcelData{
-		Data: ed.Data,
+		Rows: ed.Rows,
 	}
-}
-
-// 处理 Excel 文件
-func HandleExcel(fileName string, domainName string) (excelInfos []*ExcelRowData) {
-	f, err := excelize.OpenFile(fileName)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"fileName": fileName,
-			"err":      err,
-		}).Errorln("打开文件失败")
-		return
-	}
-	defer func() {
-		// Close the spreadsheet.
-		if err := f.Close(); err != nil {
-			logrus.Errorln(err)
-		}
-	}()
-
-	// 从第二行开始逐行读取Excel文件
-	rows, _ := f.GetRows(domainName)
-
-	for k, row := range rows {
-		if k == 0 {
-			continue
-		}
-		excelInfo := new(ExcelRowData)
-		// 读取每一行的数据
-		excelInfo.Type = row[0]
-		excelInfo.Host = row[1]
-		excelInfo.ISPLine = row[2]
-		excelInfo.Value = row[3]
-		excelInfo.MXPriority = row[4]
-		excelInfo.TTL = row[5]
-		excelInfo.Status = row[6]
-		// 尝试获取7号元素，若无法获取则设置为空
-		if len(row) > 7 {
-			excelInfo.Remark = row[7]
-		} else {
-			excelInfo.Remark = ""
-		}
-
-		excelInfos = append(excelInfos, excelInfo)
-	}
-
-	return excelInfos
 }
