@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
-	"github.com/DesistDaydream/aliyun-openapi/pkg/file"
+	"github.com/DesistDaydream/aliyun-openapi/pkg/filehandler"
 )
 
 type DomainHandler struct {
@@ -47,10 +47,9 @@ func (d *DomainHandler) DomainRecordsList(client *alidns20150109.Client) {
 
 // 逐一添加解析记录
 func (d *DomainHandler) BatchAddDomainRecord(client *alidns20150109.Client, excelFile string) {
+	logrus.Info(excelFile)
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := file.HandleExcel(excelFile, d.DomainName)
-
-	file.HandleExcel(excelFile, d.DomainName)
+	excelInfos := filehandler.HandleExcel(excelFile, d.DomainName)
 
 	for _, info := range excelInfos {
 		logrus.Infoln(info.Type, info.Value, info.Host)
@@ -96,13 +95,13 @@ func (d *DomainHandler) BatchDeleteAll(client *alidns20150109.Client) {
 // DOMAIN_DEL：批量删除域名
 // RR_ADD：批量添加解析
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
-func (d *DomainHandler) Batch(client *alidns20150109.Client, operateType string, excelFile string) {
+func (d *DomainHandler) Batch(client *alidns20150109.Client, operateType string, file string) {
 
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 	var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	excelInfos := file.HandleExcel(excelFile, d.DomainName)
+	excelInfos := filehandler.HandleExcel(file, d.DomainName)
 
 	for _, info := range excelInfos {
 		logrus.Infoln(info.Type, info.Value, info.Host)
@@ -175,12 +174,15 @@ func NewAuthInfo() (auth *AuthInfo) {
 // 命令行标志
 type Flags struct {
 	DomainName string
+	Dir        string
 	File       string
 }
 
 // 设置命令行标志
 func (flags *Flags) AddFlags() {
 	pflag.StringVarP(&flags.DomainName, "domain", "d", "", "域名")
+	// 文件路径
+	pflag.StringVarP(&flags.Dir, "dir", "i", "/mnt/d/Documents/WPS Cloud Files/1054253139/团队文档/设备文档与服务信息/域名解析/", "文件路径")
 	pflag.StringVarP(&flags.File, "file", "f", "desistdaydream.ltd.xlsx", "Excel文件")
 }
 

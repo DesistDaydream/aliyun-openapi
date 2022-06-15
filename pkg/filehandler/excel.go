@@ -1,4 +1,4 @@
-package file
+package filehandler
 
 import (
 	"github.com/sirupsen/logrus"
@@ -69,7 +69,10 @@ func NewExcelInfo(file string, domainName string) (ed *ExcelData) {
 func HandleExcel(fileName string, domainName string) (excelInfos []*ExcelRowData) {
 	f, err := excelize.OpenFile(fileName)
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.WithFields(logrus.Fields{
+			"fileName": fileName,
+			"err":      err,
+		}).Errorln("打开文件失败")
 		return
 	}
 	defer func() {
