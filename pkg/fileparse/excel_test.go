@@ -1,4 +1,4 @@
-package filehandler
+package fileparse
 
 import (
 	"reflect"
@@ -19,8 +19,8 @@ func TestNewExcelData(t *testing.T) {
 		{
 			name: "测试",
 			args: args{
-				file:       "superstor.cn.xlsx",
-				domainName: "superstor.cn",
+				file:       "desistdaydream.ltd.xlsx",
+				domainName: "desistdaydream.ltd",
 			},
 			want: &ExcelData{
 				Rows: []ExcelRowData{

@@ -1,4 +1,4 @@
-package filehandler
+package fileparse
 
 import (
 	"github.com/sirupsen/logrus"
