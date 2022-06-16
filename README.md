@@ -40,3 +40,15 @@ go run cmd/dns/dns.go -o batch -O RR_ADD -d desistdaydream.ltd -f /mnt/d/Downloa
 ```go
 go run cmd/dns/dns.go -o batch -O RR_DEL -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
 ```
+
+# 认证文件格式
+
+```yaml
+authList:
+  abc.com:
+    accessKeyId: "XXXXXXXX1"
+    accessKeySecret: "YYYYYYYY1"
+  bcd.cn:
+    accessKeyId: "XXXXXXXX2"
+    accessKeySecret: "YYYYYYYY2"
+```
