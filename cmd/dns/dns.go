@@ -14,6 +14,7 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/queryresults"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/resolve"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
+	"github.com/DesistDaydream/aliyun-openapi/pkg/logging"
 )
 
 // LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
@@ -56,17 +57,16 @@ func LogInit(level, file, format string) error {
 func main() {
 	operation := pflag.StringP("operation", "o", "", "操作类型: [add, list, batch]")
 	batchOperation := pflag.StringP("batch-operation", "O", "", "批量操作类型: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]")
-	logLevel := pflag.String("log-level", "info", "日志级别:[debug, info, warn, error, fatal]")
-	logFile := pflag.String("log-output", "", "日志输出位置，不填默认标准输出 stdout")
-	logFormat := pflag.String("log-format", "text", "日志输出格式: [text, json]")
 
 	// 添加命令行标志
 	alidnsFlags := &alidns.AlidnsFlags{}
+	logFlags := logging.LoggingFlags{}
+	logFlags.AddFlags()
 	alidnsFlags.AddFlags()
 	pflag.Parse()
 
 	// 初始化日志
-	if err := LogInit(*logLevel, *logFile, *logFormat); err != nil {
+	if err := LogInit(logFlags.LogLevel, logFlags.LogOutput, logFlags.LogFormat); err != nil {
 		logrus.Fatal("set log level error")
 	}
 
@@ -137,6 +137,6 @@ func main() {
 		}
 		d.Batch(*batchOperation, alidnsFlags.RRFile)
 	default:
-		panic("操作类型不存在")
+		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
 	}
 }
