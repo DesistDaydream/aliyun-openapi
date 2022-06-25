@@ -17,43 +17,6 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/logging"
 )
 
-// LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
-func LogInit(level, file, format string) error {
-	switch format {
-	case "text":
-		logrus.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp:   true,
-			TimestampFormat: "2006-01-02 15:04:05",
-		})
-	case "json":
-		logrus.SetFormatter(&logrus.JSONFormatter{
-			TimestampFormat:   "2006-01-02 15:04:05",
-			DisableTimestamp:  false,
-			DisableHTMLEscape: false,
-			DataKey:           "",
-			// FieldMap:          map[logrus.fieldKey]string{},
-			// CallerPrettyfier: func(*runtime.Frame) (string, string) {},
-			PrettyPrint: false,
-		})
-	}
-
-	logLevel, err := logrus.ParseLevel(level)
-	if err != nil {
-		return err
-	}
-	logrus.SetLevel(logLevel)
-
-	if file != "" {
-		f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE, 0755)
-		if err != nil {
-			return err
-		}
-		logrus.SetOutput(f)
-	}
-
-	return nil
-}
-
 func main() {
 	operation := pflag.StringP("operation", "o", "", "操作类型: [add, list, batch]")
 	batchOperation := pflag.StringP("batch-operation", "O", "", "批量操作类型: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]")
@@ -66,7 +29,7 @@ func main() {
 	pflag.Parse()
 
 	// 初始化日志
-	if err := LogInit(logFlags.LogLevel, logFlags.LogOutput, logFlags.LogFormat); err != nil {
+	if err := logging.LogInit(logFlags.LogLevel, logFlags.LogOutput, logFlags.LogFormat); err != nil {
 		logrus.Fatal("set log level error")
 	}
 
