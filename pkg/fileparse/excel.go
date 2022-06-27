@@ -66,7 +66,7 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 		erd.MXPriority = row[4]
 		erd.TTL = row[5]
 		erd.Status = row[6]
-		// 尝试第七列的值，若无法获取则设置为空
+		// 尝试第8列的值，若无法获取则设置为空
 		if len(row) > 7 {
 			erd.Remark = row[7]
 		} else {
