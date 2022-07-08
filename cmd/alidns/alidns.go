@@ -65,7 +65,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 	case "update":
 		// 检查文件是否存在
 		if _, err := os.Stat(rrFile); os.IsNotExist(err) {
-			logrus.Fatal("文件不存在")
+			logrus.Fatalf("【%v】文件不存在，请使用 -f 指定域名的记录规则文件", rrFile)
 		}
 
 		// 添加解析记录前先删除全部解析记录
@@ -90,7 +90,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 	case "batch":
 		// 检查文件是否存在
 		if _, err := os.Stat(rrFile); os.IsNotExist(err) {
-			logrus.Fatal("文件不存在")
+			logrus.Fatalf("【%v】文件不存在，请使用 -f 指定域名的记录规则文件", rrFile)
 		}
 		// 判断批量操作类型是否存在
 		if batchOperation == "" {
