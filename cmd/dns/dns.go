@@ -22,8 +22,10 @@ func main() {
 	batchOperation := pflag.StringP("batch-operation", "O", "", "批量操作类型: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]")
 
 	// 添加命令行标志
+	aliClientFlags := aliclient.AlidnsFlags{}
 	alidnsFlags := &alidns.AlidnsFlags{}
 	logFlags := logging.LoggingFlags{}
+	aliClientFlags.AddFlags()
 	logFlags.AddFlags()
 	alidnsFlags.AddFlags()
 	pflag.Parse()
@@ -38,21 +40,15 @@ func main() {
 	}
 
 	// 获取认证信息
-	auth := config.NewAuthInfo(alidnsFlags.AuthFile)
+	auth := config.NewAuthInfo(aliClientFlags.AuthFile)
 
 	// 判断传入的域名是否存在在认证信息中
-	if !auth.IsDomainExist(alidnsFlags.DomainName) {
-		logrus.Fatalf("认证信息中不存在 %v 域名, 请检查认证信息文件或命令行参数的值", alidnsFlags.DomainName)
-	}
-
-	// 初始化账号Client
-	client, err := aliclient.CreateClient(auth.AuthList[alidnsFlags.DomainName].AccessKeyID, auth.AuthList[alidnsFlags.DomainName].AccessKeySecret)
-	if err != nil {
-		panic(err)
+	if !auth.IsUserExist(aliClientFlags.UserName) {
+		logrus.Fatalf("认证信息中不存在 %v 用户, 请检查认证信息文件或命令行参数的值", aliClientFlags.UserName)
 	}
 
 	// 实例化各种 API 处理器
-	h := alidns.NewAlidnsHandler(alidnsFlags, client)
+	h := alidns.NewAlidnsHandler(auth, aliClientFlags.UserName, alidnsFlags.DomainName, aliClientFlags.Region)
 	d := domain.NewAlidnsDomain(h)
 	r := resolve.NewAlidnsResolve(h)
 	q := queryresults.NewQueryResults(h)

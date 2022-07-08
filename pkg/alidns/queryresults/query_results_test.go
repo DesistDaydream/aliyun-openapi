@@ -3,20 +3,15 @@ package queryresults
 import (
 	"testing"
 
-	"github.com/DesistDaydream/aliyun-openapi/pkg/aliclient"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
-	"github.com/alibabacloud-go/tea-utils/service"
 )
 
 func TestAlidnsQueryResults_QueryResults(t *testing.T) {
 	// 准备测试数据
 	domainName := "desistdaydream.ltd"
 	auth := config.NewAuthInfo("../../../auth.yaml")
-	client, err := aliclient.CreateClient(auth.AuthList[domainName].AccessKeyID, auth.AuthList[domainName].AccessKeySecret)
-	if err != nil {
-		panic(err)
-	}
+	handler := alidns.NewAlidnsHandler(auth, "断灬念梦", domainName, "alidns.cn-beijing.aliyuncs.com")
 
 	// 使用 gtotests 工具生成的测试代码
 	type fields struct {
@@ -36,11 +31,7 @@ func TestAlidnsQueryResults_QueryResults(t *testing.T) {
 		{
 			name: domainName,
 			fields: fields{
-				AlidnsHandler: &alidns.AlidnsHandler{
-					DomainName: domainName,
-					Runtime:    &service.RuntimeOptions{},
-					Client:     client,
-				},
+				AlidnsHandler: handler,
 			},
 			args: args{
 				taskID: 3715007136,
