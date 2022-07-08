@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/DesistDaydream/aliyun-openapi/cmd/alidns"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/aliclient"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/logging"
@@ -34,16 +35,14 @@ func newApp() *cobra.Command {
 	RootCmd.PersistentFlags().StringP("log-output", "", "", "日志输出位置，不填默认标准输出 stdout")
 	RootCmd.PersistentFlags().StringP("log-format", "", "text", "日志输出格式: [text, json]")
 
-	RootCmd.PersistentFlags().StringP("auth-file", "f", "auth.yaml", "认证信息文件")
+	RootCmd.PersistentFlags().StringP("auth-file", "F", "owner.yaml", "认证信息文件")
 	RootCmd.PersistentFlags().StringP("username", "u", "", "用户名")
-	RootCmd.PersistentFlags().StringP("region", "r", "cn-southwest-2", "地域")
+	RootCmd.PersistentFlags().StringP("region", "r", "alidns.cn-beijing.aliyuncs.com", "区域")
 
 	// 添加子命令
 	RootCmd.AddCommand(
-	// vpc.CreateCommand(),
+		alidns.CreateCommand(),
 	// elb.CreateCommand(),
-	// ecs.CreateCommand(),
-	// waf.CreateCommand(),
 	)
 
 	return RootCmd
@@ -69,7 +68,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) {
 
 	// 检查 clientFlags.AuthFile 文件是否存在
 	if _, err := os.Stat(authFile); os.IsNotExist(err) {
-		logrus.Fatal("文件不存在")
+		logrus.Fatalf("打开【%v】文件失败: %v", authFile, err)
 	}
 	// 获取认证信息
 	auth := config.NewAuthInfo(authFile)

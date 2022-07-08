@@ -14,10 +14,15 @@
         "NAMESPACE": "default"
       },
       "args": [
-        "-d desistdaydream.ltd",
-        "-o list",
-        "-u 断灬念梦",
-        "-F /mnt/e/Projects/DesistDaydream/aliyun-openapi/auth.yaml"
+        "alidns",
+        "-d",
+        "desistdaydream.ltd",
+        "-o",
+        "list",
+        "-u",
+        "断灬念梦",
+        "-F",
+        "owner.yaml"
       ]
     }
   ]

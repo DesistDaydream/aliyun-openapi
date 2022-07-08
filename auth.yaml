@@ -1,0 +1,7 @@
+authList:
+  ${UserNAME1}:
+    accessKeyId: "AAAAAAA"
+    accessKeySecret: "BBBBBBBB"
+  ${UserNAME2}:
+    accessKeyId: "AAAAAAA"
+    accessKeySecret: "BBBBBBBB"

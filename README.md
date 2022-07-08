@@ -23,32 +23,20 @@ go build cmd/dns/dns.go
 
 # 云解析常用操作
 
-全部删除后添加
+全部删除后逐一添加
 
 ```go
-go run cmd/dns/dns.go -d desistdaydream.ltd -o add -f desistdaydream.ltd.xlsx
+go run main.go alidns -u ${用户名} -d desistdaydream.ltd -o add -f desistdaydream.ltd.xlsx
 ```
 
 批量添加
 
 ```go
-go run cmd/dns/dns.go -o batch -O RR_ADD -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
+go run main.go alidns -u ${用户名} -o batch -O RR_ADD -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
 ```
 
 批量删除
 
 ```go
-go run cmd/dns/dns.go -o batch -O RR_DEL -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
-```
-
-# 认证文件格式
-
-```yaml
-authList:
-  abc.com:
-    accessKeyId: "XXXXXXXX1"
-    accessKeySecret: "YYYYYYYY1"
-  bcd.cn:
-    accessKeyId: "XXXXXXXX2"
-    accessKeySecret: "YYYYYYYY2"
+go run main.go alidns -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
 ```

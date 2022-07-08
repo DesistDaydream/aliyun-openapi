@@ -1,3 +1,4 @@
 *.xlsx
 auth.json
-auth.yaml
+lichenhao.yaml
+owner.yaml
