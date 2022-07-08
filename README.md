@@ -32,11 +32,11 @@ go run main.go alidns -u ${用户名} -d desistdaydream.ltd -o add -f desistdayd
 批量添加
 
 ```go
-go run main.go alidns -u ${用户名} -o batch -O RR_ADD -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
+go run main.go alidns -u ${用户名} -o batch -O RR_ADD -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
 ```
 
 批量删除
 
 ```go
-go run main.go alidns -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f /mnt/d/Downloads/desistdaydream.ltd.xlsx
+go run main.go alidns -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
 ```
