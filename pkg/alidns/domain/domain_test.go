@@ -12,7 +12,9 @@ func TestAlidnsDomain_Batch(t *testing.T) {
 	// 准备测试数据
 	domainName := "desistdaydream.ltd"
 	auth := config.NewAuthInfo("../../../auth.yaml")
-	handler := alidns.NewAlidnsHandler(auth, "断灬念梦", domainName, "alidns.cn-beijing.aliyuncs.com")
+	ak := auth.AuthList["断灬念梦"].AccessKeyID
+	sk := auth.AuthList["断灬念梦"].AccessKeySecret
+	handler := alidns.NewAlidnsHandler(ak, sk, domainName, "alidns.cn-beijing.aliyuncs.com")
 
 	// 使用 gtotests 工具生成的测试代码
 	type fields struct {
