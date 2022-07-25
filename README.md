@@ -41,4 +41,4 @@ go run main.go alidns -F owner.yaml -u ${用户名} -o batch -O RR_ADD -d desist
 go run main.go alidns -F owner.yaml -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
 ```
 
-/mnt/d/Documents/WPS\ Cloud\ Files/1054253139/团队文档/设备文档与服务信息/域名解析/superstor.cn.xlsx
+/mnt/d/Documents/WPS\ Cloud\ Files/1054253139/团队文档/设备文档与服务信息/域名解析/desistdaydream.cn.xlsx
