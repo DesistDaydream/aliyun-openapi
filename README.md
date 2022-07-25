@@ -26,17 +26,19 @@ go build cmd/dns/dns.go
 全部删除后逐一添加
 
 ```go
-go run main.go alidns -u ${用户名} -d desistdaydream.ltd -o add -f desistdaydream.ltd.xlsx
+go run main.go alidns -F owner.yaml -u ${用户名} -d desistdaydream.ltd -o add -f desistdaydream.ltd.xlsx
 ```
 
-批量添加
+批量添加(增量更新)
 
 ```go
-go run main.go alidns -u ${用户名} -o batch -O RR_ADD -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
+go run main.go alidns -F owner.yaml -u ${用户名} -o batch -O RR_ADD -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
 ```
 
 批量删除
 
 ```go
-go run main.go alidns -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
+go run main.go alidns -F owner.yaml -u ${用户名} -o batch -O RR_DEL -d desistdaydream.ltd -f desistdaydream.ltd.xlsx
 ```
+
+/mnt/d/Documents/WPS\ Cloud\ Files/1054253139/团队文档/设备文档与服务信息/域名解析/superstor.cn.xlsx
