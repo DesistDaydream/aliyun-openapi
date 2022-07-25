@@ -81,6 +81,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 				logrus.Fatal(err)
 			}
 			if task == 1 {
+				logrus.Infof("域名解析记录已批量删除，开始执行添加解析记录的操作o")
 				break
 			}
 			time.Sleep(time.Second * 1)
@@ -100,7 +101,22 @@ func runAlidns(cmd *cobra.Command, args []string) {
 		if !d.IsBatchOperationExist(batchOperation) {
 			logrus.Fatal("批量操作类型不存在，可用的值有: RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL")
 		}
-		d.Batch(batchOperation, rrFile)
+		taskID, err := d.Batch(batchOperation, rrFile)
+		if err != nil {
+			logrus.Errorf("执行【%v】操作失败，错误信息: %v", batchOperation, err)
+		}
+		// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
+		for {
+			task, err := q.QueryResults(taskID)
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			if task == 1 {
+				logrus.Infof("执行【%v】操作成功", batchOperation)
+				break
+			}
+			time.Sleep(time.Second * 1)
+		}
 	default:
 		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
 	}
