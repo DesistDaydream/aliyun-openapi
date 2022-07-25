@@ -81,7 +81,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 				logrus.Fatal(err)
 			}
 			if task == 1 {
-				logrus.Infof("域名解析记录已批量删除，开始执行添加解析记录的操作o")
+				logrus.Infof("域名解析记录已批量删除，开始执行添加解析记录的操作")
 				break
 			}
 			time.Sleep(time.Second * 1)
