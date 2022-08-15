@@ -9,13 +9,17 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/domain"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/queryresults"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/resolve"
+	"github.com/DesistDaydream/aliyun-openapi/pkg/fileparse"
+	"github.com/alibabacloud-go/tea/tea"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
 )
 
 func CreateCommand() *cobra.Command {
 	long := `域名解析记录可用的操作类型：
-	update 更新域名的解析记录，先全部删除再逐一添加
+	update 【！！！高危操作！！！】更新域名的解析记录，先删除原有的解析记录，再添加新的解析记录
 	list 列出所有记录规则
 	batch 批量操作.包括如下几种: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]
 
@@ -69,20 +73,43 @@ func runAlidns(cmd *cobra.Command, args []string) {
 		}
 		logrus.Infoln(domainRecords)
 	case "update":
-		// 检查文件是否存在
-		if _, err := os.Stat(rrFile); os.IsNotExist(err) {
-			logrus.Fatalf("【%v】文件不存在，请使用 -f 指定域名的记录规则文件", rrFile)
+		update(rrFile, r, q, d, domainName)
+	case "batch":
+		batch(rrFile, r, q, d, domainName, batchOperation)
+	default:
+		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
+	}
+}
+
+func update(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string) {
+	// 检查文件是否存在
+	checkFile(rrFile)
+
+	// 列出所有域名记录
+	domainRecords, err := r.DomainRecordsList()
+	if err != nil {
+		panic(err)
+	}
+
+	// 如果列出的域名记录不为空，则先批量删除所有列出的域名记录
+	if len(domainRecords.Record) > 0 {
+		var needDeleteRecords []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
+		for _, record := range domainRecords.Record {
+			needDeleteRecords = append(needDeleteRecords, &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
+				Type:   record.Type,
+				Value:  record.Value,
+				Domain: record.DomainName,
+			})
 		}
 
-		// 添加解析记录前先删除全部解析记录
-		taskID, err := d.Batch("RR_DEL", rrFile)
+		delTaskID, err := d.Batch("RR_DEL", needDeleteRecords)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
 		// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
 		for {
-			task, err := q.QueryResults(taskID)
+			task, err := q.QueryResults(delTaskID)
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -92,38 +119,97 @@ func runAlidns(cmd *cobra.Command, args []string) {
 			}
 			time.Sleep(time.Second * 1)
 		}
-		// 这里为了测试目的，使用的是逐一添加的方式，实际应用中可以使用批量添加的方式
-		r.OnebyoneAddDomainRecord(rrFile)
-	case "batch":
-		// 检查文件是否存在
-		if _, err := os.Stat(rrFile); os.IsNotExist(err) {
-			logrus.Fatalf("【%v】文件不存在，请使用 -f 指定域名的记录规则文件", rrFile)
-		}
-		// 判断批量操作类型是否存在
-		if batchOperation == "" {
-			logrus.Fatal("请使用 -O 标志指定批量操作类型")
-		}
-		// 判断批量操作类型是否合法
-		if !d.IsBatchOperationExist(batchOperation) {
-			logrus.Fatal("批量操作类型不存在，可用的值有: RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL")
-		}
-		taskID, err := d.Batch(batchOperation, rrFile)
+	}
+
+	// 从文件中获取需要批量添加的解析记录
+	domainRecordInfos, err := handleFile(rrFile, domainName)
+	if err != nil {
+		panic(err)
+	}
+
+	// 批量添加解析记录
+	addTaskID, err := d.Batch("RR_ADD", domainRecordInfos)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	// 根据 taskID 持续查询添加任务完成状态
+	for {
+		task, err := q.QueryResults(addTaskID)
 		if err != nil {
-			logrus.Errorf("执行【%v】操作失败，错误信息: %v", batchOperation, err)
+			logrus.Fatal(err)
 		}
-		// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
-		for {
-			task, err := q.QueryResults(taskID)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-			if task == 1 {
-				logrus.Infof("执行【%v】操作成功", batchOperation)
-				break
-			}
-			time.Sleep(time.Second * 1)
+		if task == 1 {
+			logrus.Infof("域名解析记录已批量添加")
+			break
 		}
-	default:
-		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
+		time.Sleep(time.Second * 1)
+	}
+}
+
+func batch(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string, batchOperation string) {
+	// 检查文件是否存在
+	checkFile(rrFile)
+
+	// 判断批量操作类型是否存在
+	if batchOperation == "" {
+		logrus.Fatal("请使用 -O 标志指定批量操作类型")
+	}
+	// 判断批量操作类型是否合法
+	if !d.IsBatchOperationExist(batchOperation) {
+		logrus.Fatal("批量操作类型不存在，可用的值有: RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL")
+	}
+
+	domainRecordInfos, err := handleFile(rrFile, domainName)
+	if err != nil {
+		panic(err)
+	}
+
+	taskID, err := d.Batch(batchOperation, domainRecordInfos)
+	if err != nil {
+		logrus.Errorf("执行【%v】操作失败，错误信息: %v", batchOperation, err)
+	}
+	// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
+	for {
+		task, err := q.QueryResults(taskID)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if task == 1 {
+			logrus.Infof("执行【%v】操作成功", batchOperation)
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
+}
+
+func handleFile(file string, domainName string) ([]*alidns20150109.OperateBatchDomainRequestDomainRecordInfo, error) {
+	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
+
+	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
+	data, err := fileparse.NewExcelData(file, domainName)
+	if err != nil {
+		logrus.Errorf("fileparse.NewExcelData error: %v", err)
+		return nil, err
+	}
+
+	for _, row := range data.Rows {
+		var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
+		domainRecordInfo.Type = tea.String(row.Type)
+		domainRecordInfo.Value = tea.String(row.Value)
+		domainRecordInfo.Rr = tea.String(row.Host)
+		domainRecordInfo.Domain = tea.String(domainName)
+
+		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
+	}
+
+	logrus.Debugln(domainRecordInfos)
+
+	return domainRecordInfos, nil
+}
+
+func checkFile(rrFile string) {
+	if _, err := os.Stat(rrFile); os.IsNotExist(err) {
+		logrus.Fatalf("【%v】文件不存在，请使用 -f 指定域名的记录规则文件", rrFile)
 	}
 }

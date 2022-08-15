@@ -2,7 +2,6 @@ package domain
 
 import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns"
-	"github.com/DesistDaydream/aliyun-openapi/pkg/fileparse"
 	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/sirupsen/logrus"
@@ -25,28 +24,7 @@ func NewAlidnsDomain(alidnsHandler *alidns.AlidnsHandler) *AlidnsDomain {
 // DOMAIN_DEL：批量删除域名
 // RR_ADD：批量添加解析
 // RR_DEL：批量删除解析（删除满足N.RR、N.VALUE、N.RR&amp;N.VALUE条件的解析记录。如果无N.RR&&N.VALUE则清空参数DomainRecordInfo.N.Domain下的解析记录）
-func (d *AlidnsDomain) Batch(operateType string, file string) (int64, error) {
-	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
-
-	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
-	data, err := fileparse.NewExcelData(file, d.AlidnsHandler.DomainName)
-	if err != nil {
-		logrus.Errorf("fileparse.NewExcelData error: %v", err)
-		return 0, err
-	}
-
-	for _, row := range data.Rows {
-		var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
-		domainRecordInfo.Type = tea.String(row.Type)
-		domainRecordInfo.Value = tea.String(row.Value)
-		domainRecordInfo.Rr = tea.String(row.Host)
-		domainRecordInfo.Domain = tea.String(d.AlidnsHandler.DomainName)
-
-		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
-	}
-
-	logrus.Debugln(domainRecordInfos)
-
+func (d *AlidnsDomain) Batch(operateType string, domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo) (int64, error) {
 	operateBatchDomainRequest := &alidns20150109.OperateBatchDomainRequest{
 		Type:             tea.String(operateType),
 		DomainRecordInfo: domainRecordInfos,

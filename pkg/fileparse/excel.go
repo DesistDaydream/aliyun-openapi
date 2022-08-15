@@ -7,14 +7,14 @@ import (
 
 // Excel 中每行的数据
 type ExcelRowData struct {
-	Type       string `json:"type"`
-	Host       string `json:"host"`
-	ISPLine    string `json:"isp"`
-	Value      string `json:"value"`
-	MXPriority string `json:"mxPriority"`
-	TTL        string `json:"ttl"`
-	Status     string `json:"status"`
-	Remark     string `json:"remark"`
+	Type       string `json:"type" xlsx:"记录类型"`
+	Host       string `json:"host" xlsx:"主机记录"`
+	ISPLine    string `json:"isp" xlsx:"解析线路"`
+	Value      string `json:"value" xlsx:"记录值"`
+	MXPriority string `json:"mxPriority" xlsx:"Mx优先级"`
+	TTL        string `json:"ttl" xlsx:"TTL值"`
+	Status     string `json:"status" xlsx:"状态(暂停/正常)"`
+	Remark     string `json:"remark" xlsx:"备注"`
 }
 
 // Excel 中的数据
