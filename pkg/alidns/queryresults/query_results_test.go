@@ -10,7 +10,7 @@ import (
 func TestAlidnsQueryResults_QueryResults(t *testing.T) {
 	// 准备测试数据
 	domainName := "desistdaydream.ltd"
-	auth := config.NewAuthInfo("../../../auth.yaml")
+	auth := config.NewAuthInfo("../../../owner.yaml")
 	ak := auth.AuthList["断灬念梦"].AccessKeyID
 	sk := auth.AuthList["断灬念梦"].AccessKeySecret
 	handler := alidns.NewAlidnsHandler(ak, sk, domainName, "alidns.cn-beijing.aliyuncs.com")

@@ -36,6 +36,7 @@ func CreateCommand() *cobra.Command {
 	return AlidnsCmd
 }
 
+// 执行 alidns 子命令之前需要执行的操作
 func alidnsPersistentPreRun(cmd *cobra.Command, args []string) {
 	// 执行根命令的初始化操作
 	parent := cmd.Parent()
@@ -44,6 +45,7 @@ func alidnsPersistentPreRun(cmd *cobra.Command, args []string) {
 	}
 }
 
+// 执行 alidns 子命令
 func runAlidns(cmd *cobra.Command, args []string) {
 	operation, _ := cmd.Flags().GetString("operation")
 	batchOperation, _ := cmd.Flags().GetString("batch-operation")
@@ -61,7 +63,11 @@ func runAlidns(cmd *cobra.Command, args []string) {
 
 	switch operation {
 	case "list":
-		r.DomainRecordsList()
+		domainRecords, err := r.DomainRecordsList()
+		if err != nil {
+			panic(err)
+		}
+		logrus.Infoln(domainRecords)
 	case "update":
 		// 检查文件是否存在
 		if _, err := os.Stat(rrFile); os.IsNotExist(err) {

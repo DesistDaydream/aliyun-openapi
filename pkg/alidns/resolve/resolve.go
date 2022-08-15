@@ -20,7 +20,7 @@ func NewAlidnsResolve(alidnsHandler *alidns.AlidnsHandler) *AlidnsResolve {
 }
 
 // 获取解析记录列表 DescribeDomainRecords
-func (d *AlidnsResolve) DomainRecordsList() {
+func (d *AlidnsResolve) DomainRecordsList() (*alidns20150109.DescribeDomainRecordsResponseBodyDomainRecords, error) {
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
 	describeDomainRecordsRequest := &alidns20150109.DescribeDomainRecordsRequest{
 		DomainName: tea.String(d.AlidnsHandler.DomainName),
@@ -29,9 +29,10 @@ func (d *AlidnsResolve) DomainRecordsList() {
 	// 使用参数调用 DescribeDomainRecords 接口
 	dd, err := d.AlidnsHandler.Client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.AlidnsHandler.Runtime)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	logrus.Infoln(dd)
+
+	return dd.Body.DomainRecords, nil
 }
 
 // 逐一添加解析记录 AddDomainRecord
