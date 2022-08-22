@@ -28,9 +28,9 @@ func TestAlidnsResolve_DomainRecordsList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			userName := "ehualu_oc"
+			userName := "a"
 			region := "alidns.cn-beijing.aliyuncs.com"
-			domainName := "superstor.cn"
+			domainName := "b"
 			auth := config.NewAuthInfo("owner.yaml")
 			aliclient.Info = &aliclient.ClientInfo{
 				AK:     auth.AuthList[userName].AccessKeyID,
