@@ -72,6 +72,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 			panic(err)
 		}
 		logrus.Infoln(domainRecords)
+		logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
 	case "update":
 		update(rrFile, r, q, d, domainName)
 	case "batch":

@@ -21,15 +21,35 @@ func NewAlidnsResolve(alidnsHandler *alidns.AlidnsHandler) *AlidnsResolve {
 
 // 获取解析记录列表 DescribeDomainRecords
 func (d *AlidnsResolve) DomainRecordsList() (*alidns20150109.DescribeDomainRecordsResponseBodyDomainRecords, error) {
+	// 一次查询可以返回的最大条目数量
+	var pageSize int64 = 20
+	// var domainRecords *alidns20150109.DescribeDomainRecordsResponseBodyDomainRecords
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
 	describeDomainRecordsRequest := &alidns20150109.DescribeDomainRecordsRequest{
 		DomainName: tea.String(d.AlidnsHandler.DomainName),
+		PageSize:   tea.Int64(pageSize), // 一次查询可以返回的最大条目数量，取值范围为1~500，默认为20
+		PageNumber: tea.Int64(1),        // 分页查询的页码，默认为1
 	}
 
 	// 使用参数调用 DescribeDomainRecords 接口
 	dd, err := d.AlidnsHandler.Client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.AlidnsHandler.Runtime)
 	if err != nil {
 		return nil, err
+	}
+
+	// 如果查询到的记录条数大于 pageSize 的值，那么需要分页查询。并将查询到的记录合并
+	if *dd.Body.TotalCount/pageSize >= 1 && *dd.Body.TotalCount%pageSize != 0 {
+		page := int(*dd.Body.TotalCount/pageSize + 1)
+
+		for i := 2; i <= page; i++ {
+			describeDomainRecordsRequest.PageNumber = tea.Int64(int64(i))
+			dr, err := d.AlidnsHandler.Client.DescribeDomainRecordsWithOptions(describeDomainRecordsRequest, d.AlidnsHandler.Runtime)
+			if err != nil {
+				return nil, err
+			}
+
+			dd.Body.DomainRecords.Record = append(dd.Body.DomainRecords.Record, dr.Body.DomainRecords.Record...)
+		}
 	}
 
 	return dd.Body.DomainRecords, nil
