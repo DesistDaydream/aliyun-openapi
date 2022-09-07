@@ -23,12 +23,13 @@ func NewAlidnsResolve(alidnsHandler *alidns.AlidnsHandler) *AlidnsResolve {
 func (d *AlidnsResolve) DomainRecordsList() (*alidns20150109.DescribeDomainRecordsResponseBodyDomainRecords, error) {
 	// 一次查询可以返回的最大条目数量
 	var pageSize int64 = 20
+	var pageNumber int64 = 1
 	// var domainRecords *alidns20150109.DescribeDomainRecordsResponseBodyDomainRecords
 	// 发起 DescribeDomainRecords 请求时需要携带的参数
 	describeDomainRecordsRequest := &alidns20150109.DescribeDomainRecordsRequest{
 		DomainName: tea.String(d.AlidnsHandler.DomainName),
-		PageSize:   tea.Int64(pageSize), // 一次查询可以返回的最大条目数量，取值范围为1~500，默认为20
-		PageNumber: tea.Int64(1),        // 分页查询的页码，默认为1
+		PageSize:   tea.Int64(pageSize),   // 一次查询可以返回的最大条目数量，取值范围为1~500，默认为20
+		PageNumber: tea.Int64(pageNumber), // 分页查询的页码，默认为1
 	}
 
 	// 使用参数调用 DescribeDomainRecords 接口
