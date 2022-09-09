@@ -38,6 +38,8 @@ func (d *AlidnsResolve) DomainRecordsList() (*alidns20150109.DescribeDomainRecor
 		return nil, err
 	}
 
+	logrus.Debugf("从 DescribeDomainRecords 接口中获取到 %v 条始记录", *dd.Body.TotalCount)
+
 	// 如果查询到的记录条数大于 pageSize 的值，那么需要分页查询。并将查询到的记录合并
 	if *dd.Body.TotalCount/pageSize >= 1 && *dd.Body.TotalCount%pageSize != 0 {
 		page := int(*dd.Body.TotalCount/pageSize + 1)

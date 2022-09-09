@@ -71,7 +71,14 @@ func runAlidns(cmd *cobra.Command, args []string) {
 		if err != nil {
 			panic(err)
 		}
-		logrus.Infoln(domainRecords)
+
+		for index, domainRecord := range domainRecords.Record {
+			logrus.WithFields(logrus.Fields{
+				"类型": *domainRecord.Type,
+				"记录": *domainRecord.RR,
+				"值":  *domainRecord.Value,
+			}).Infof("%v 域名的第 %v 条资源记录", domainName, index+1)
+		}
 		logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
 	case "update":
 		update(rrFile, r, q, d, domainName)
