@@ -57,7 +57,7 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 			"row": row,
 		}).Debugf("检查每一条需要处理的解析记录")
 
-		// 将每一行中的的每列数据赋值到结构体重
+		// 将每一行中的的每列数据赋值到结构体中
 		var erd ExcelRowData
 		erd.Type = row[0]
 		erd.Host = row[1]
