@@ -89,17 +89,38 @@ func (d *AlidnsResolve) OnebyoneAddDomainRecord(file string) {
 	}
 }
 
-// 批量设置域名记录状态，即暂停还是启用解析记录 SetDomainRecordStatus
-func (d *AlidnsResolve) OnebyoneSetDomainRecordStatus(file string) {
-	setDomainRecordStatusRequest := &alidns20150109.SetDomainRecordStatusRequest{
-		RecordId: tea.String("1"),
-		Status:   tea.String("Enable"),
-	}
-
-	// 复制代码运行请自行打印 API 的返回值
-	_, err := d.AlidnsHandler.Client.SetDomainRecordStatusWithOptions(setDomainRecordStatusRequest, d.AlidnsHandler.Runtime)
+// 逐一停用域名记录状态 SetDomainRecordStatus
+func (d *AlidnsResolve) OnebyoneSetDomainRecordStatusToDisable(fileData *fileparse.ExcelData) {
+	// 获取所有解析的资源记录与ID的对应关系
+	relation := make(map[string]string)
+	domainRecords, err := d.DomainRecordsList()
 	if err != nil {
 		logrus.Errorln(err)
 	}
+	for _, r := range domainRecords.Record {
+		relation[*r.RR] = *r.RecordId
+	}
 
+	// 获取需要暂停解析的资源记录
+	var needPauseRR []string
+	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
+	for _, row := range fileData.Rows {
+		if row.Status == "暂停" {
+			needPauseRR = append(needPauseRR, row.Host)
+		}
+	}
+
+	// 更新解析状态
+	for _, r := range needPauseRR {
+		setDomainRecordStatusRequest := &alidns20150109.SetDomainRecordStatusRequest{
+			RecordId: tea.String(relation[r]),
+			Status:   tea.String("Disable"),
+		}
+		resp, err := d.AlidnsHandler.Client.SetDomainRecordStatusWithOptions(setDomainRecordStatusRequest, d.AlidnsHandler.Runtime)
+		if err != nil {
+			logrus.Errorln(err)
+		}
+
+		logrus.Infof("已将 ID 为 %v 的 %v 记录暂停", *resp.Body.RecordId, r)
+	}
 }
