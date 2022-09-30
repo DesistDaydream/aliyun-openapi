@@ -1,10 +1,10 @@
 package alidns
 
 import (
-	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
-	util "github.com/alibabacloud-go/tea-utils/service"
+	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v4/client"
+	util "github.com/alibabacloud-go/tea-utils/v2/service"
 
-	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
+	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
 )
 

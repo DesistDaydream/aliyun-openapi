@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
+	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v4/client"
 )
 
 func CreateCommand() *cobra.Command {

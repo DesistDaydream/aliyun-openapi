@@ -4,7 +4,7 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns"
 	"github.com/sirupsen/logrus"
 
-	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v2/client"
+	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v4/client"
 	"github.com/alibabacloud-go/tea/tea"
 )
 
