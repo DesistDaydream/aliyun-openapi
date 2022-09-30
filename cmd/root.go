@@ -34,6 +34,7 @@ func newApp() *cobra.Command {
 	RootCmd.PersistentFlags().StringP("log-level", "", "info", "日志级别:[debug, info, warn, error, fatal]")
 	RootCmd.PersistentFlags().StringP("log-output", "", "", "日志输出位置，不填默认标准输出 stdout")
 	RootCmd.PersistentFlags().StringP("log-format", "", "text", "日志输出格式: [text, json]")
+	RootCmd.PersistentFlags().BoolP("log-caller", "", false, "是否输出函数名、文件名、行号")
 
 	RootCmd.PersistentFlags().StringP("auth-file", "F", "owner.yaml", "认证信息文件")
 	RootCmd.PersistentFlags().StringP("username", "u", "", "用户名")
@@ -54,7 +55,8 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) {
 	logLevel, _ := cmd.Flags().GetString("log-level")
 	logOutput, _ := cmd.Flags().GetString("log-output")
 	logFormat, _ := cmd.Flags().GetString("log-format")
-	if err := logging.LogInit(logLevel, logOutput, logFormat); err != nil {
+	logCaller, _ := cmd.Flags().GetBool("log-caller")
+	if err := logging.LogInit(logLevel, logOutput, logFormat, logCaller); err != nil {
 		logrus.Fatal("初始化日志失败", err)
 	}
 

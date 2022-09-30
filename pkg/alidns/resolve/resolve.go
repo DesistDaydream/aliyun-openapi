@@ -88,3 +88,18 @@ func (d *AlidnsResolve) OnebyoneAddDomainRecord(file string) {
 		}
 	}
 }
+
+// 批量设置 SetDomainRecordStatus
+func (d *AlidnsResolve) OnebyoneSetDomainRecordStatus(file string) {
+	setDomainRecordStatusRequest := &alidns20150109.SetDomainRecordStatusRequest{
+		RecordId: tea.String("1"),
+		Status:   tea.String("Enable"),
+	}
+
+	// 复制代码运行请自行打印 API 的返回值
+	_, err := d.AlidnsHandler.Client.SetDomainRecordStatusWithOptions(setDomainRecordStatusRequest, d.AlidnsHandler.Runtime)
+	if err != nil {
+		logrus.Errorln(err)
+	}
+
+}

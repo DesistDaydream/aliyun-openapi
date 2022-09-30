@@ -19,7 +19,7 @@ import (
 
 func CreateCommand() *cobra.Command {
 	long := `域名解析记录可用的操作类型：
-	update 【！！！高危操作！！！】更新域名的解析记录，先删除原有的解析记录，再添加新的解析记录
+	full-update 【！！！高危操作！！！】全量更新域名的解析记录，先删除原有的解析记录，再添加新的解析记录
 	list 列出所有记录规则
 	batch 批量操作.包括如下几种: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]
 
@@ -80,8 +80,10 @@ func runAlidns(cmd *cobra.Command, args []string) {
 			}).Infof("%v 域名的第 %v 条资源记录", domainName, index+1)
 		}
 		logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
+	case "full-update":
+		fullUpdate(rrFile, r, q, d, domainName)
 	case "update":
-		update(rrFile, r, q, d, domainName)
+		// TODO: 只更新
 	case "batch":
 		batch(rrFile, r, q, d, domainName, batchOperation)
 	default:
@@ -89,7 +91,7 @@ func runAlidns(cmd *cobra.Command, args []string) {
 	}
 }
 
-func update(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string) {
+func fullUpdate(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string) {
 	// 检查文件是否存在
 	checkFile(rrFile)
 
@@ -109,6 +111,8 @@ func update(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQuery
 				Domain: record.DomainName,
 			})
 		}
+
+		logrus.Debugf("需要删除 %v 条资源记录", len(needDeleteRecords))
 
 		delTaskID, err := d.Batch("RR_DEL", needDeleteRecords)
 		if err != nil {
@@ -210,8 +214,6 @@ func handleFile(file string, domainName string) ([]*alidns20150109.OperateBatchD
 
 		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
 	}
-
-	logrus.Debugln(domainRecordInfos)
 
 	return domainRecordInfos, nil
 }

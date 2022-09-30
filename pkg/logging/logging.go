@@ -12,6 +12,7 @@ type LoggingFlags struct {
 	LogLevel  string
 	LogOutput string
 	LogFormat string
+	LogCaller bool
 }
 
 // 添加命令行标志
@@ -19,10 +20,11 @@ func (flags *LoggingFlags) AddFlags() {
 	pflag.StringVar(&flags.LogLevel, "log-level", "info", "日志级别:[debug, info, warn, error, fatal]")
 	pflag.StringVar(&flags.LogOutput, "log-output", "", "日志输出位置，不填默认标准输出 stdout")
 	pflag.StringVar(&flags.LogFormat, "log-format", "text", "日志输出格式: [text, json]")
+	pflag.BoolVar(&flags.LogCaller, "log-caller", false, "是否输出函数名、文件名、行号")
 }
 
 // LogInit 日志功能初始化，若指定了 log-output 命令行标志，则将日志写入到文件中
-func LogInit(level, file, format string) error {
+func LogInit(level, file, format string, caller bool) error {
 	switch format {
 	case "text":
 		logrus.SetFormatter(&logrus.TextFormatter{
@@ -41,6 +43,7 @@ func LogInit(level, file, format string) error {
 		})
 	}
 
+	logrus.SetReportCaller(caller)
 	logLevel, err := logrus.ParseLevel(level)
 	if err != nil {
 		return err

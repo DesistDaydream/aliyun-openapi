@@ -34,6 +34,7 @@ func (qr *AlidnsQueryResults) QueryResults(taskID int64) (int32, error) {
 	logrus.WithFields(logrus.Fields{
 		"任务ID": *result.Body.TaskId,
 		"任务结果": *result.Body.Status,
+		"总数":   *result.Body.TotalCount,
 		"成功数":  *result.Body.SuccessCount,
 		"失败数":  *result.Body.FailedCount,
 	}).Info("查询批量任务结果")
