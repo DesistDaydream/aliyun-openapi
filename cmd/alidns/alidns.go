@@ -33,7 +33,7 @@ func CreateCommand() *cobra.Command {
 	}
 
 	AlidnsCmd.Flags().StringP("operation", "o", "list", "操作类型")
-	AlidnsCmd.Flags().StringP("batch-operation", "O", "", "批量操作类型")
+	AlidnsCmd.Flags().StringP("batch-type", "O", "", "批量操作类型")
 	AlidnsCmd.Flags().StringP("domain", "d", "", "域名")
 	AlidnsCmd.Flags().StringP("rr-file", "f", "", "存有域名资源记录的文件")
 
@@ -52,7 +52,7 @@ func alidnsPersistentPreRun(cmd *cobra.Command, args []string) {
 // 执行 alidns 子命令
 func runAlidns(cmd *cobra.Command, args []string) {
 	operation, _ := cmd.Flags().GetString("operation")
-	batchOperation, _ := cmd.Flags().GetString("batch-operation")
+	batchType, _ := cmd.Flags().GetString("batch-type")
 	domainName, err := cmd.Flags().GetString("domain")
 	if err != nil || domainName == "" {
 		logrus.Fatal("请使用 -d 标志指定要操作的域名")
@@ -81,20 +81,32 @@ func runAlidns(cmd *cobra.Command, args []string) {
 		}
 		logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
 	case "full-update":
-		fullUpdate(rrFile, r, q, d, domainName)
+		// 检查文件是否存在
+		checkFile(rrFile)
+		// 从文件中获取需要批量添加的解析记录
+		domainRecordInfos, err := handleFile(rrFile, domainName)
+		if err != nil {
+			panic(err)
+		}
+		fullUpdate(domainRecordInfos, r, q, d, domainName)
 	case "update":
 		// TODO: 只更新
 	case "batch":
-		batch(rrFile, r, q, d, domainName, batchOperation)
+		// 检查文件是否存在
+		checkFile(rrFile)
+		domainRecordInfos, err := handleFile(rrFile, domainName)
+		if err != nil {
+			panic(err)
+		}
+		batch(domainRecordInfos, r, q, d, domainName, batchType)
 	default:
 		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
 	}
 }
 
-func fullUpdate(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string) {
-	// 检查文件是否存在
-	checkFile(rrFile)
-
+func fullUpdate(domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string) {
+	batchTypeDel := "RR_DEL"
+	batchTypeAdd := "RR_ADD"
 	// 列出所有域名记录
 	domainRecords, err := r.DomainRecordsList()
 	if err != nil {
@@ -114,14 +126,14 @@ func fullUpdate(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQ
 
 		logrus.Debugf("需要删除 %v 条资源记录", len(needDeleteRecords))
 
-		delTaskID, err := d.Batch("RR_DEL", needDeleteRecords)
+		delTaskID, err := d.Batch(batchTypeDel, needDeleteRecords)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 
 		// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
 		for {
-			task, err := q.QueryResults(delTaskID)
+			task, err := q.QueryResults(delTaskID, batchTypeDel)
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -133,21 +145,15 @@ func fullUpdate(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQ
 		}
 	}
 
-	// 从文件中获取需要批量添加的解析记录
-	domainRecordInfos, err := handleFile(rrFile, domainName)
-	if err != nil {
-		panic(err)
-	}
-
 	// 批量添加解析记录
-	addTaskID, err := d.Batch("RR_ADD", domainRecordInfos)
+	addTaskID, err := d.Batch(batchTypeAdd, domainRecordInfos)
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
 	// 根据 taskID 持续查询添加任务完成状态
 	for {
-		task, err := q.QueryResults(addTaskID)
+		task, err := q.QueryResults(addTaskID, batchTypeDel)
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -159,36 +165,28 @@ func fullUpdate(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQ
 	}
 }
 
-func batch(rrFile string, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string, batchOperation string) {
-	// 检查文件是否存在
-	checkFile(rrFile)
-
+func batch(domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo, r *resolve.AlidnsResolve, q *queryresults.AlidnsQueryResults, d *domain.AlidnsDomain, domainName string, batchType string) {
 	// 判断批量操作类型是否存在
-	if batchOperation == "" {
+	if batchType == "" {
 		logrus.Fatal("请使用 -O 标志指定批量操作类型")
 	}
 	// 判断批量操作类型是否合法
-	if !d.IsBatchOperationExist(batchOperation) {
+	if !d.IsBatchOperationExist(batchType) {
 		logrus.Fatal("批量操作类型不存在，可用的值有: RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL")
 	}
 
-	domainRecordInfos, err := handleFile(rrFile, domainName)
+	taskID, err := d.Batch(batchType, domainRecordInfos)
 	if err != nil {
-		panic(err)
-	}
-
-	taskID, err := d.Batch(batchOperation, domainRecordInfos)
-	if err != nil {
-		logrus.Errorf("执行【%v】操作失败，错误信息: %v", batchOperation, err)
+		logrus.Errorf("执行【%v】操作失败，错误信息: %v", batchType, err)
 	}
 	// 根据 taskID 持续查询删除任务完成状态，任务完成后再执行后续代码
 	for {
-		task, err := q.QueryResults(taskID)
+		task, err := q.QueryResults(taskID, batchType)
 		if err != nil {
 			logrus.Fatal(err)
 		}
 		if task == 1 {
-			logrus.Infof("执行【%v】操作成功", batchOperation)
+			logrus.Infof("执行【%v】操作成功", batchType)
 			break
 		}
 		time.Sleep(time.Second * 1)

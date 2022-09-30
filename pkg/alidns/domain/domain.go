@@ -39,7 +39,7 @@ func (d *AlidnsDomain) Batch(operateType string, domainRecordInfos []*alidns2015
 	logrus.WithFields(logrus.Fields{
 		"任务ID": *result.Body.TaskId,
 		"请求ID": *result.Body.RequestId,
-	}).Info("批量任务运行信息")
+	}).Infof("%v 批量任务运行信息", operateType)
 
 	return *result.Body.TaskId, nil
 }

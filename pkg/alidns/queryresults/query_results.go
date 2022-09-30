@@ -20,7 +20,7 @@ func NewQueryResults(alidnsHandler *alidns.AlidnsHandler) *AlidnsQueryResults {
 }
 
 // 根据 taskID 查询批量处理任务的结果
-func (qr *AlidnsQueryResults) QueryResults(taskID int64) (int32, error) {
+func (qr *AlidnsQueryResults) QueryResults(taskID int64, batchType string) (int32, error) {
 	describeBatchResultCountRequest := &alidns20150109.DescribeBatchResultCountRequest{
 		TaskId: tea.Int64(taskID),
 	}
@@ -31,13 +31,18 @@ func (qr *AlidnsQueryResults) QueryResults(taskID int64) (int32, error) {
 		return 0, err
 	}
 
+	if *result.Body.Status == -1 {
+		logrus.Errorln("任务 ID 不存在")
+		return 0, err
+	}
+
 	logrus.WithFields(logrus.Fields{
 		"任务ID": *result.Body.TaskId,
-		"任务结果": *result.Body.Status,
+		"任务状态": *result.Body.Status,
 		"总数":   *result.Body.TotalCount,
 		"成功数":  *result.Body.SuccessCount,
 		"失败数":  *result.Body.FailedCount,
-	}).Info("查询批量任务结果")
+	}).Infof("查询 %v 批量任务结果", batchType)
 
 	return *result.Body.Status, err
 }
