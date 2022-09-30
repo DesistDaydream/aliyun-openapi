@@ -89,7 +89,7 @@ func (d *AlidnsResolve) OnebyoneAddDomainRecord(file string) {
 	}
 }
 
-// 批量设置 SetDomainRecordStatus
+// 批量设置域名记录状态，即暂停还是启用解析记录 SetDomainRecordStatus
 func (d *AlidnsResolve) OnebyoneSetDomainRecordStatus(file string) {
 	setDomainRecordStatusRequest := &alidns20150109.SetDomainRecordStatusRequest{
 		RecordId: tea.String("1"),
