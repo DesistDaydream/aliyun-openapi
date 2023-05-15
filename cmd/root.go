@@ -6,9 +6,10 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/cmd/alidns"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/aliclient"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
-	"github.com/DesistDaydream/aliyun-openapi/pkg/logging"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
+	logging "github.com/DesistDaydream/logging/pkg/logrus_init"
 )
 
 type Flags struct {
@@ -23,7 +24,7 @@ func AddFlags(f *Flags) {
 
 var (
 	flags    Flags
-	logFlags logging.LoggingFlags
+	logFlags logging.LogrusFlags
 )
 
 func Execute() {
@@ -66,7 +67,7 @@ func newApp() *cobra.Command {
 // 执行每个 root 下的子命令时，都需要执行的函数
 func initConfig() {
 	// 初始化日志
-	if err := logging.LogInit(&logFlags); err != nil {
+	if err := logging.LogrusInit(&logFlags); err != nil {
 		logrus.Fatal("初始化日志失败", err)
 	}
 
