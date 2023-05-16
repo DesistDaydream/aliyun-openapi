@@ -17,6 +17,15 @@ import (
 	alidns20150109 "github.com/alibabacloud-go/alidns-20150109/v4/client"
 )
 
+type AliDNSFlags struct {
+	operation  string
+	batchType  string
+	domainName string
+	rrFile     string
+}
+
+var alidnsFlags AliDNSFlags
+
 func CreateCommand() *cobra.Command {
 	long := `域名解析记录可用的操作类型：
 	full-update 【！！！高危操作！！！】全量更新域名的解析记录，先删除原有的解析记录，再添加新的解析记录
@@ -32,10 +41,10 @@ func CreateCommand() *cobra.Command {
 		Run:              runAlidns,
 	}
 
-	AlidnsCmd.Flags().StringP("operation", "o", "list", "操作类型")
-	AlidnsCmd.Flags().StringP("batch-type", "O", "", "批量操作类型")
-	AlidnsCmd.Flags().StringP("domain", "d", "", "域名")
-	AlidnsCmd.Flags().StringP("rr-file", "f", "", "存有域名资源记录的文件")
+	AlidnsCmd.Flags().StringVarP(&alidnsFlags.operation, "operation", "o", "list", "操作类型")
+	AlidnsCmd.Flags().StringVarP(&alidnsFlags.batchType, "batch-type", "O", "", "批量操作类型")
+	AlidnsCmd.Flags().StringVarP(&alidnsFlags.domainName, "domain-name", "d", "", "域名")
+	AlidnsCmd.Flags().StringVarP(&alidnsFlags.rrFile, "rr-file", "f", "", "存有域名资源记录的文件")
 
 	return AlidnsCmd
 }
@@ -51,21 +60,17 @@ func alidnsPersistentPreRun(cmd *cobra.Command, args []string) {
 
 // 执行 alidns 子命令
 func runAlidns(cmd *cobra.Command, args []string) {
-	operation, _ := cmd.Flags().GetString("operation")
-	batchType, _ := cmd.Flags().GetString("batch-type")
-	domainName, err := cmd.Flags().GetString("domain")
-	if err != nil || domainName == "" {
+	if alidnsFlags.domainName == "" {
 		logrus.Fatal("请使用 -d 标志指定要操作的域名")
 	}
-	rrFile, _ := cmd.Flags().GetString("rr-file")
 
 	// 实例化各种 API 处理器
-	h := alidns.NewAlidnsHandler(aliclient.Info.AK, aliclient.Info.SK, domainName, aliclient.Info.Region)
+	h := alidns.NewAlidnsHandler(aliclient.Info.AK, aliclient.Info.SK, alidnsFlags.domainName, aliclient.Info.Region)
 	d := domain.NewAlidnsDomain(h)
 	r := resolve.NewAlidnsResolve(h)
 	q := queryresults.NewQueryResults(h)
 
-	switch operation {
+	switch alidnsFlags.operation {
 	case "list":
 		domainRecords, err := r.DomainRecordsList()
 		if err != nil {
@@ -77,28 +82,28 @@ func runAlidns(cmd *cobra.Command, args []string) {
 				"类型": *domainRecord.Type,
 				"记录": *domainRecord.RR,
 				"值":  *domainRecord.Value,
-			}).Infof("%v 域名的第 %v 条资源记录", domainName, index+1)
+			}).Infof("%v 域名的第 %v 条资源记录", alidnsFlags.domainName, index+1)
 		}
 		logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
 	case "full-update":
 		// 检查文件是否存在
-		checkFile(rrFile)
+		checkFile(alidnsFlags.rrFile)
 		// 从文件中获取需要批量添加的解析记录
-		domainRecordInfos, err := handleFile(rrFile, domainName)
+		domainRecordInfos, err := handleFile(alidnsFlags.rrFile, alidnsFlags.domainName)
 		if err != nil {
 			panic(err)
 		}
-		fullUpdate(domainRecordInfos, r, q, d, domainName)
+		fullUpdate(domainRecordInfos, r, q, d, alidnsFlags.domainName)
 	case "update":
 		// TODO: 只更新
 	case "batch":
 		// 检查文件是否存在
-		checkFile(rrFile)
-		domainRecordInfos, err := handleFile(rrFile, domainName)
+		checkFile(alidnsFlags.rrFile)
+		domainRecordInfos, err := handleFile(alidnsFlags.rrFile, alidnsFlags.domainName)
 		if err != nil {
 			panic(err)
 		}
-		batch(domainRecordInfos, r, q, d, domainName, batchType)
+		batch(domainRecordInfos, r, q, d, alidnsFlags.domainName, alidnsFlags.batchType)
 	default:
 		logrus.Fatalln("操作类型不存在，请使用 -o 指定操作类型")
 	}

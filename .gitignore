@@ -1,5 +1,5 @@
 *.xlsx
 auth.json
-lichenhao.yaml
 owner.yaml
+my_auth.yaml
 .vscode/sftp.json

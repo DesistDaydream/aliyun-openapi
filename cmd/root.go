@@ -49,7 +49,7 @@ func newApp() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&flags.AuthFile, "auth-file", "F", "owner.yaml", "认证信息文件")
+	RootCmd.PersistentFlags().StringVarP(&flags.AuthFile, "auth-file", "F", "my_auth.yaml", "认证信息文件")
 	RootCmd.PersistentFlags().StringVarP(&flags.Username, "username", "u", "", "用户名")
 	RootCmd.PersistentFlags().StringVarP(&flags.Region, "region", "r", "alidns.cn-beijing.aliyuncs.com", "区域")
 
