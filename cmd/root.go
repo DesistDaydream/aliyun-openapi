@@ -58,7 +58,7 @@ func newApp() *cobra.Command {
 	// 添加子命令
 	RootCmd.AddCommand(
 		alidns.CreateCommand(),
-	// elb.CreateCommand(),
+		// elb.CreateCommand(),
 	)
 
 	return RootCmd
