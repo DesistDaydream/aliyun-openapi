@@ -1,6 +1,9 @@
 package alidns
 
 import (
+	"os"
+
+	"github.com/olekukonko/tablewriter"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -18,15 +21,23 @@ func alidnsListCommand() *cobra.Command {
 func runAlidnsList(cmd *cobra.Command, args []string) {
 	domainRecords, err := r.DomainRecordsList()
 	if err != nil {
-		panic(err)
+		logrus.Fatalf("列出记录失败，原因: %v", err)
 	}
 
-	for index, domainRecord := range domainRecords.Record {
-		logrus.WithFields(logrus.Fields{
-			"类型": *domainRecord.Type,
-			"记录": *domainRecord.RR,
-			"值":  *domainRecord.Value,
-		}).Infof("%v 域名的第 %v 条资源记录", alidnsFlags.domainName, index+1)
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"类型", "记录", "值", "ID", "描述"})
+
+	for _, domainRecord := range domainRecords.Record {
+		var remark string
+		if domainRecord.Remark != nil {
+			remark = *domainRecord.Remark
+		} else {
+			remark = ""
+		}
+		table.Append([]string{*domainRecord.Type, *domainRecord.RR, *domainRecord.Value, *domainRecord.RecordId, remark})
 	}
+
+	table.Render()
+
 	logrus.Infof("共有 %d 条记录", len(domainRecords.Record))
 }
