@@ -32,37 +32,37 @@ func runAlidnsUpdate(cmd *cobra.Command, args []string) {
 		if row.ID != "" {
 			resp, err := h.Client.UpdateDomainRecordWithOptions(&alidns20150109.UpdateDomainRecordRequest{
 				RecordId: tea.String(row.ID),
-				RR:       tea.String(row.Host),
+				RR:       tea.String(row.RR),
 				Type:     tea.String(row.Type),
 				Value:    tea.String(row.Value),
 			}, &util.RuntimeOptions{})
 			if err != nil {
 				if tea.ToMap(err)["Code"] == "DomainRecordDuplicate" {
-					logrus.Warnf("%v 记录无变化，无需更新", row.Host)
+					logrus.Warnf("%v 记录无变化，无需更新", row.RR)
 					continue
 				} else {
-					logrus.Errorf("更新记录 %v 失败，原因: %v", row.Host, tea.ToMap(err)["Code"])
+					logrus.Errorf("更新记录 %v 失败，原因: %v", row.RR, tea.ToMap(err)["Code"])
 				}
 			}
 
-			logrus.Infof("ID 为 %v 的记录更新成功", *resp.Body.RecordId)
+			logrus.Infof("成功！ID 为 %v 的记录更新为 %v - %v", *resp.Body.RecordId, row.RR, row.Value)
 		} else {
 			resp, err := h.Client.AddDomainRecordWithOptions(&alidns20150109.AddDomainRecordRequest{
-				RR:         tea.String(row.Host),
+				RR:         tea.String(row.RR),
 				Type:       tea.String(row.Type),
 				Value:      tea.String(row.Value),
 				DomainName: tea.String(alidnsFlags.domainName),
 			}, &util.RuntimeOptions{})
 			if err != nil {
 				if tea.ToMap(err)["Code"] == "DomainRecordDuplicate" {
-					logrus.Warnf("%v 已存在相同记录，无需添加", row.Host)
+					logrus.Warnf("%v 已存在相同记录，无需添加", row.RR)
 					continue
 				} else {
-					logrus.Errorf("添加记录 %v 失败，原因: %v", row.Host, tea.ToMap(err)["Code"])
+					logrus.Errorf("添加记录 %v 失败，原因: %v", row.RR, tea.ToMap(err)["Code"])
 				}
 			}
 
-			logrus.Infof("成功添加 ID 为 %v 的记录", *resp.Body.RecordId)
+			logrus.Infof("成功添加 %v 解析记录，ID 为 %v", row.RR, *resp.Body.RecordId)
 		}
 	}
 }

@@ -66,7 +66,7 @@ func (d *AlidnsResolve) OnebyoneAddDomainRecord(fileData *fileparse.ExcelData) {
 			DomainName: tea.String(d.AlidnsHandler.DomainName),
 			Type:       tea.String(row.Type),
 			Value:      tea.String(row.Value),
-			RR:         tea.String(row.Host),
+			RR:         tea.String(row.RR),
 		}
 		dd, err := d.AlidnsHandler.Client.AddDomainRecordWithOptions(addDomainRecordRequest, d.AlidnsHandler.Runtime)
 		if err != nil {
@@ -75,7 +75,7 @@ func (d *AlidnsResolve) OnebyoneAddDomainRecord(fileData *fileparse.ExcelData) {
 			logrus.WithFields(logrus.Fields{
 				"记录类型": row.Type,
 				"记录值":  row.Value,
-				"主机记录": row.Host,
+				"主机记录": row.RR,
 			}).Infof("记录添加成功")
 
 			logrus.Debugf("检查添加成功的响应结果: %v", dd)
@@ -100,7 +100,7 @@ func (d *AlidnsResolve) OnebyoneSetDomainRecordStatusToDisable(fileData *filepar
 	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
 	for _, row := range fileData.Rows {
 		if row.Status == "暂停" {
-			needPauseRR = append(needPauseRR, row.Host)
+			needPauseRR = append(needPauseRR, row.RR)
 		}
 	}
 

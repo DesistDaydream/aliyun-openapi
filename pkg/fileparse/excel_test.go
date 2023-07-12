@@ -21,7 +21,7 @@ func TestNewExcelData(t *testing.T) {
 	}
 
 	for _, row := range got.Rows {
-		table.Append([]string{row.Type, row.Host, row.Value, row.ID, row.Remark})
+		table.Append([]string{row.Type, row.RR, row.Value, row.ID, row.Remark})
 	}
 
 	table.Render()

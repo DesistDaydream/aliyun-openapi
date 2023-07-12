@@ -8,7 +8,7 @@ import (
 // Excel 中每行的数据
 type ExcelRowData struct {
 	Type       string `json:"type" xlsx:"记录类型"`
-	Host       string `json:"host" xlsx:"主机记录"`
+	RR         string `json:"host" xlsx:"主机记录"`
 	ISPLine    string `json:"isp" xlsx:"解析线路"`
 	Value      string `json:"value" xlsx:"记录值"`
 	MXPriority string `json:"mxPriority" xlsx:"Mx优先级"`
@@ -69,7 +69,7 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 		// 将每一行中的的每列数据赋值到结构体中
 		ed.Rows = append(ed.Rows, ExcelRowData{
 			Type:       row[0],
-			Host:       row[1],
+			RR:         row[1],
 			ISPLine:    row[2],
 			Value:      row[3],
 			MXPriority: row[4],

@@ -88,7 +88,7 @@ func handleFile(file string, domainName string) ([]*alidns20150109.OperateBatchD
 	for _, row := range data.Rows {
 		domainRecordInfos = append(domainRecordInfos, &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
 			Domain: tea.String(domainName),
-			Rr:     tea.String(row.Host),
+			Rr:     tea.String(row.RR),
 			Type:   tea.String(row.Type),
 			Value:  tea.String(row.Value),
 		})
