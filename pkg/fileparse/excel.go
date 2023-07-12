@@ -1,6 +1,8 @@
 package fileparse
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/xuri/excelize/v2"
 )
@@ -15,6 +17,7 @@ type ExcelRowData struct {
 	TTL        string `json:"ttl" xlsx:"TTL值"`
 	Status     string `json:"status" xlsx:"状态(暂停/正常)"`
 	Remark     string `json:"remark" xlsx:"备注"`
+	ID         string `json:"id" xlsx:"ID"`
 }
 
 // Excel 中的数据
@@ -47,6 +50,8 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 		return nil, err
 	}
 
+	fmt.Println(rows)
+
 	for k, row := range rows {
 		// 跳过第一行
 		if k == 0 {
@@ -58,22 +63,34 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 		}).Debugf("检查每一条需要处理的解析记录")
 
 		// 将每一行中的的每列数据赋值到结构体中
-		var erd ExcelRowData
-		erd.Type = row[0]
-		erd.Host = row[1]
-		erd.ISPLine = row[2]
-		erd.Value = row[3]
-		erd.MXPriority = row[4]
-		erd.TTL = row[5]
-		erd.Status = row[6]
 		// 尝试第8列的值，若无法获取则设置为空
-		if len(row) > 7 {
-			erd.Remark = row[7]
+		if len(row) > 8 {
+			ed.Rows = append(ed.Rows, ExcelRowData{
+				Type:       row[0],
+				Host:       row[1],
+				ISPLine:    row[2],
+				Value:      row[3],
+				MXPriority: row[4],
+				TTL:        row[5],
+				Status:     row[6],
+				Remark:     row[7],
+				ID:         row[8],
+			})
+
 		} else {
-			erd.Remark = ""
+			ed.Rows = append(ed.Rows, ExcelRowData{
+				Type:       row[0],
+				Host:       row[1],
+				ISPLine:    row[2],
+				Value:      row[3],
+				MXPriority: row[4],
+				TTL:        row[5],
+				Status:     row[6],
+				Remark:     row[7],
+				ID:         "",
+			})
 		}
 
-		ed.Rows = append(ed.Rows, erd)
 	}
 
 	return &ExcelData{

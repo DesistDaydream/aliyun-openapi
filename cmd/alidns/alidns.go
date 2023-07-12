@@ -86,13 +86,12 @@ func handleFile(file string, domainName string) ([]*alidns20150109.OperateBatchD
 	}
 
 	for _, row := range data.Rows {
-		var domainRecordInfo alidns20150109.OperateBatchDomainRequestDomainRecordInfo
-		domainRecordInfo.Type = tea.String(row.Type)
-		domainRecordInfo.Value = tea.String(row.Value)
-		domainRecordInfo.Rr = tea.String(row.Host)
-		domainRecordInfo.Domain = tea.String(domainName)
-
-		domainRecordInfos = append(domainRecordInfos, &domainRecordInfo)
+		domainRecordInfos = append(domainRecordInfos, &alidns20150109.OperateBatchDomainRequestDomainRecordInfo{
+			Domain: tea.String(domainName),
+			Rr:     tea.String(row.Host),
+			Type:   tea.String(row.Type),
+			Value:  tea.String(row.Value),
+		})
 	}
 
 	return domainRecordInfos, nil

@@ -2,6 +2,18 @@
 
 一个调用阿里云 OpenAPI 的工具仓库
 
+下面这两个库有一些功能函数非常好用
+
+- util  "github.com/alibabacloud-go/tea-utils/v2/service"
+- "github.com/alibabacloud-go/tea/tea"
+
+比如：
+
+- util.ToJSONString(err)
+- tea.ToMap(err)
+
+这两种都可以让错误信息以标准格式输出，以便提取其中的某些信息。
+
 # 目录结构
 
 cmd
