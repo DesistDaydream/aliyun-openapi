@@ -1,8 +1,6 @@
 package fileparse
 
 import (
-	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/xuri/excelize/v2"
 )
@@ -29,8 +27,7 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 	var ed ExcelData
 	f, err := excelize.OpenFile(file)
 	if err != nil {
-		logrus.Errorln(err)
-		return nil, err
+		logrus.Fatalf("打开 Excel 文件异常，原因: %v", err)
 	}
 	defer func() {
 		// Close the spreadsheet.
@@ -50,8 +47,6 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 		return nil, err
 	}
 
-	fmt.Println(rows)
-
 	for k, row := range rows {
 		// 跳过第一行
 		if k == 0 {
@@ -62,34 +57,27 @@ func NewExcelData(file string, domainName string) (*ExcelData, error) {
 			"row": row,
 		}).Debugf("检查每一条需要处理的解析记录")
 
-		// 将每一行中的的每列数据赋值到结构体中
 		// 尝试第8列的值，若无法获取则设置为空
-		if len(row) > 8 {
-			ed.Rows = append(ed.Rows, ExcelRowData{
-				Type:       row[0],
-				Host:       row[1],
-				ISPLine:    row[2],
-				Value:      row[3],
-				MXPriority: row[4],
-				TTL:        row[5],
-				Status:     row[6],
-				Remark:     row[7],
-				ID:         row[8],
-			})
+		var id string
 
+		if len(row) > 8 {
+			id = row[8]
 		} else {
-			ed.Rows = append(ed.Rows, ExcelRowData{
-				Type:       row[0],
-				Host:       row[1],
-				ISPLine:    row[2],
-				Value:      row[3],
-				MXPriority: row[4],
-				TTL:        row[5],
-				Status:     row[6],
-				Remark:     row[7],
-				ID:         "",
-			})
+			id = ""
 		}
+
+		// 将每一行中的的每列数据赋值到结构体中
+		ed.Rows = append(ed.Rows, ExcelRowData{
+			Type:       row[0],
+			Host:       row[1],
+			ISPLine:    row[2],
+			Value:      row[3],
+			MXPriority: row[4],
+			TTL:        row[5],
+			Status:     row[6],
+			Remark:     row[7],
+			ID:         id,
+		})
 
 	}
 

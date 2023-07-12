@@ -11,7 +11,7 @@ import (
 func alidnsListCommand() *cobra.Command {
 	alidnsListCmd := &cobra.Command{
 		Use:   "list",
-		Short: "",
+		Short: "列出域名下的全部解析记录",
 		Run:   runAlidnsList,
 	}
 

@@ -75,10 +75,10 @@ func initConfig() {
 	q = queryresults.NewQueryResults(h)
 }
 
+// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成调用批量操作方法时所需的 OperateBatchDomainRequestDomainRecordInfo 结构体
 func handleFile(file string, domainName string) ([]*alidns20150109.OperateBatchDomainRequestDomainRecordInfo, error) {
 	var domainRecordInfos []*alidns20150109.OperateBatchDomainRequestDomainRecordInfo
 
-	// 处理 Excel 文件，读取 Excel 文件中的数据，并转换成 OperateBatchDomainRequestDomainRecordInfo 结构体
 	data, err := fileparse.NewExcelData(file, domainName)
 	if err != nil {
 		logrus.Errorf("fileparse.NewExcelData error: %v", err)

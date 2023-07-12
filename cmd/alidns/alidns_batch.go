@@ -14,7 +14,7 @@ import (
 func alidnsBatchCommand() *cobra.Command {
 	alidnsBatchCmd := &cobra.Command{
 		Use:   "batch",
-		Short: "",
+		Short: "批量操作，可用的值有: RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL",
 		Run:   runAlidnsBatch,
 	}
 

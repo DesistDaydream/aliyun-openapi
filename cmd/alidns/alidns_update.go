@@ -13,7 +13,7 @@ import (
 func alidnsUpdateCommand() *cobra.Command {
 	alidnsUpdateCmd := &cobra.Command{
 		Use:   "update",
-		Short: "",
+		Short: "更新解析记录，若存在记录ID则更新，不存在则创建",
 		Run:   runAlidnsUpdate,
 	}
 
@@ -21,10 +21,7 @@ func alidnsUpdateCommand() *cobra.Command {
 }
 
 func runAlidnsUpdate(cmd *cobra.Command, args []string) {
-	// domainRecords, err := r.DomainRecordsList()
-	// if err != nil {
-	// 	logrus.Fatalf("列出记录失败，原因: %v", err)
-	// }
+	checkFile(alidnsFlags.rrFile)
 
 	excelData, err := fileparse.NewExcelData(alidnsFlags.rrFile, alidnsFlags.domainName)
 	if err != nil {
@@ -33,29 +30,39 @@ func runAlidnsUpdate(cmd *cobra.Command, args []string) {
 
 	for _, row := range excelData.Rows {
 		if row.ID != "" {
-			updateDomainRecordResponse, err := h.Client.UpdateDomainRecordWithOptions(&alidns20150109.UpdateDomainRecordRequest{
+			resp, err := h.Client.UpdateDomainRecordWithOptions(&alidns20150109.UpdateDomainRecordRequest{
 				RecordId: tea.String(row.ID),
 				RR:       tea.String(row.Host),
 				Type:     tea.String(row.Type),
 				Value:    tea.String(row.Value),
 			}, &util.RuntimeOptions{})
-			if err != nil && tea.ToMap(err)["Code"] != "DomainRecordDuplicate" {
-				logrus.Errorf("更新记录失败，原因: %v", tea.ToMap(err)["Code"])
+			if err != nil {
+				if tea.ToMap(err)["Code"] == "DomainRecordDuplicate" {
+					logrus.Warnf("%v 记录无变化，无需更新", row.Host)
+					continue
+				} else {
+					logrus.Errorf("更新记录 %v 失败，原因: %v", row.Host, tea.ToMap(err)["Code"])
+				}
 			}
 
-			logrus.Infof("%v", updateDomainRecordResponse)
+			logrus.Infof("ID 为 %v 的记录更新成功", *resp.Body.RecordId)
 		} else {
-			addDomainRecordResponse, err := h.Client.AddDomainRecordWithOptions(&alidns20150109.AddDomainRecordRequest{
+			resp, err := h.Client.AddDomainRecordWithOptions(&alidns20150109.AddDomainRecordRequest{
 				RR:         tea.String(row.Host),
 				Type:       tea.String(row.Type),
 				Value:      tea.String(row.Value),
 				DomainName: tea.String(alidnsFlags.domainName),
 			}, &util.RuntimeOptions{})
-			if err != nil && tea.ToMap(err)["Code"] != "DomainRecordDuplicate" {
-				logrus.Errorf("添加记录失败，原因: %v", tea.ToMap(err)["Code"])
+			if err != nil {
+				if tea.ToMap(err)["Code"] == "DomainRecordDuplicate" {
+					logrus.Warnf("%v 已存在相同记录，无需添加", row.Host)
+					continue
+				} else {
+					logrus.Errorf("添加记录 %v 失败，原因: %v", row.Host, tea.ToMap(err)["Code"])
+				}
 			}
 
-			logrus.Infof("%v", addDomainRecordResponse)
+			logrus.Infof("成功添加 ID 为 %v 的记录", *resp.Body.RecordId)
 		}
 	}
 }

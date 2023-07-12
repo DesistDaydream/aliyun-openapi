@@ -14,7 +14,7 @@ import (
 func alidnsFullUpdateCommand() *cobra.Command {
 	alidnsFullUpdateCmd := &cobra.Command{
 		Use:   "full-update",
-		Short: "",
+		Short: "全量更新指定域名的解析记录。注意: 该操作会批量删除后再批量创建！",
 		Run:   runAlidnsFullUpdate,
 	}
 
