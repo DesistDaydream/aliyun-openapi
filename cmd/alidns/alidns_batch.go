@@ -13,10 +13,12 @@ import (
 
 func alidnsBatchCommand() *cobra.Command {
 	alidnsBatchCmd := &cobra.Command{
-		Use:   "bathc",
+		Use:   "batch",
 		Short: "",
 		Run:   runAlidnsBatch,
 	}
+
+	alidnsBatchCmd.Flags().StringVarP(&alidnsFlags.batchType, "batch-type", "O", "", "批量操作类型")
 
 	return alidnsBatchCmd
 }
