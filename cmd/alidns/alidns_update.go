@@ -28,6 +28,14 @@ func runAlidnsUpdate(cmd *cobra.Command, args []string) {
 		logrus.Fatalf("%v", err)
 	}
 
+	if alidnsFlags.rrID != nil {
+		updateRecordForID(excelData)
+	} else {
+		updateAllRecord(excelData)
+	}
+}
+
+func updateAllRecord(excelData *fileparse.ExcelData) {
 	for _, row := range excelData.Rows {
 		if row.ID != "" {
 			resp, err := h.Client.UpdateDomainRecordWithOptions(&alidns20150109.UpdateDomainRecordRequest{
@@ -63,6 +71,33 @@ func runAlidnsUpdate(cmd *cobra.Command, args []string) {
 			}
 
 			logrus.Infof("成功添加 %v 解析记录，ID 为 %v", row.RR, *resp.Body.RecordId)
+		}
+	}
+}
+
+func updateRecordForID(excelData *fileparse.ExcelData) {
+	for _, id := range alidnsFlags.rrID {
+		for _, row := range excelData.Rows {
+			if row.ID == id {
+				resp, err := h.Client.UpdateDomainRecordWithOptions(&alidns20150109.UpdateDomainRecordRequest{
+					RecordId: tea.String(row.ID),
+					RR:       tea.String(row.RR),
+					Type:     tea.String(row.Type),
+					Value:    tea.String(row.Value),
+				}, &util.RuntimeOptions{})
+				if err != nil {
+					if tea.ToMap(err)["Code"] == "DomainRecordDuplicate" {
+						logrus.Warnf("%v 记录无变化，无需更新", row.RR)
+						break
+					} else {
+						logrus.Errorf("更新记录 %v 失败，原因: %v", row.RR, tea.ToMap(err)["Code"])
+					}
+				}
+
+				logrus.Infof("成功！ID 为 %v 的记录更新为 %v - %v", *resp.Body.RecordId, row.RR, row.Value)
+
+				break
+			}
 		}
 	}
 }

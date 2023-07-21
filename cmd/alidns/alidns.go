@@ -21,6 +21,7 @@ type AliDNSFlags struct {
 	batchType  string
 	domainName string
 	rrFile     string
+	rrID       []string
 }
 
 var alidnsFlags AliDNSFlags
@@ -45,6 +46,7 @@ func CreateCommand() *cobra.Command {
 	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.batchType, "batch-type", "O", "", "批量操作类型")
 	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.domainName, "domain-name", "d", "", "域名")
 	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.rrFile, "rr-file", "f", "", "存有域名资源记录的文件")
+	alidnsCmd.PersistentFlags().StringSliceVar(&alidnsFlags.rrID, "rr-id", nil, "认证信息文件")
 
 	alidnsCmd.AddCommand(
 		alidnsListCommand(),
