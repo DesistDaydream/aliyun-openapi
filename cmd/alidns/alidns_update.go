@@ -53,7 +53,7 @@ func updateAllRecord(excelData *fileparse.ExcelData) {
 				}
 			}
 
-			logrus.Infof("成功！ID 为 %v 的记录更新为 %v - %v", *resp.Body.RecordId, row.RR, row.Value)
+			logrus.Infof("成功！ID 为 %v 的记录更新为 %v - %v - %v", *resp.Body.RecordId, row.Type, row.RR, row.Value)
 		} else {
 			resp, err := h.Client.AddDomainRecordWithOptions(&alidns20150109.AddDomainRecordRequest{
 				RR:         tea.String(row.RR),
