@@ -3,3 +3,5 @@ auth.json
 owner.yaml
 my_auth.yaml
 .vscode/sftp.json
+
+test/files/

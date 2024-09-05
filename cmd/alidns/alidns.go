@@ -9,6 +9,7 @@ import (
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/queryresults"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/alidns/resolve"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/fileparse"
+
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,29 +34,28 @@ func CreateCommand() *cobra.Command {
 	batch 批量操作.包括如下几种: [RR_ADD,RR_DEL,DOMAIN_ADD,DOMAIN_DEL]
 
 	注意：若想要增量更新域名的记录规则，使用 batch 的 RR_ADD 操作即可`
-	alidnsCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "alidns",
 		Short: "云解析",
 		Long:  long,
 		// Run:   runAlidns,
+		PersistentPreRun: preRun,
 	}
 
-	cobra.OnInitialize(initConfig)
+	cmd.PersistentFlags().StringVarP(&alidnsFlags.operation, "operation", "o", "list", "操作类型")
+	cmd.PersistentFlags().StringVarP(&alidnsFlags.batchType, "batch-type", "O", "", "批量操作类型")
+	cmd.PersistentFlags().StringVarP(&alidnsFlags.domainName, "domain-name", "d", "", "域名")
+	cmd.PersistentFlags().StringVarP(&alidnsFlags.rrFile, "rr-file", "f", "", "存有域名资源记录的文件")
+	cmd.PersistentFlags().StringSliceVar(&alidnsFlags.rrID, "rr-id", nil, "认证信息文件")
 
-	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.operation, "operation", "o", "list", "操作类型")
-	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.batchType, "batch-type", "O", "", "批量操作类型")
-	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.domainName, "domain-name", "d", "", "域名")
-	alidnsCmd.PersistentFlags().StringVarP(&alidnsFlags.rrFile, "rr-file", "f", "", "存有域名资源记录的文件")
-	alidnsCmd.PersistentFlags().StringSliceVar(&alidnsFlags.rrID, "rr-id", nil, "认证信息文件")
-
-	alidnsCmd.AddCommand(
+	cmd.AddCommand(
 		alidnsListCommand(),
 		alidnsUpdateCommand(),
 		alidnsFullUpdateCommand(),
 		alidnsBatchCommand(),
 	)
 
-	return alidnsCmd
+	return cmd
 }
 
 var (
@@ -65,7 +65,7 @@ var (
 	q *queryresults.AlidnsQueryResults
 )
 
-func initConfig() {
+func preRun(cmd *cobra.Command, args []string) {
 	if alidnsFlags.domainName == "" {
 		logrus.Fatal("请使用 -d 标志指定要操作的域名")
 	}

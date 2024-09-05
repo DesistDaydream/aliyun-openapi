@@ -4,12 +4,14 @@ import (
 	"os"
 
 	"github.com/DesistDaydream/aliyun-openapi/cmd/alidns"
+	"github.com/DesistDaydream/aliyun-openapi/cmd/oss"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/aliclient"
 	"github.com/DesistDaydream/aliyun-openapi/pkg/config"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 
 	logging "github.com/DesistDaydream/logging/pkg/logrus_init"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 type Flags struct {
@@ -44,7 +46,9 @@ func newApp() *cobra.Command {
 		Use:   "alicloud-openapi",
 		Short: "通过阿里云 OpenAPI 管理资源的工具",
 		Long:  long,
-		// PersistentPreRun: rootPersistentPreRun,
+		// PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// 	initConfig()
+		// },
 	}
 
 	cobra.OnInitialize(initConfig)
@@ -59,6 +63,7 @@ func newApp() *cobra.Command {
 	RootCmd.AddCommand(
 		alidns.CreateCommand(),
 		// elb.CreateCommand(),
+		oss.CreateCommand(),
 	)
 
 	return RootCmd
